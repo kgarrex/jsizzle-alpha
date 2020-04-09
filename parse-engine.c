@@ -69,9 +69,9 @@ goto ERROR_CLEANUP;\
 
 static long key_exists(struct jszlnode *value, struct atom *key)
 {
-    for(value = value->child; value; value = value->next)
-        if(value->name == key) return 1;   
-    return 0;
+  for(value = value->child; value; value = value->next)
+    if(value->name == key) return 1;   
+  return 0;
 }
 
 /*
@@ -79,30 +79,32 @@ static long key_exists(struct jszlnode *value, struct atom *key)
 */
 static unsigned inline skip_ws(const char *loc, unsigned *line)
 {
-unsigned c;
-const void *start = loc;
-    do{
+  unsigned c;
+  const void *start = loc;
+  do{
 
     c = *loc;
-    if(c == ' ' || c == '\t')
-        loc++;     
+    if(c == ' ' || c == '\t'){
+      loc++;
+    }
     else if(c == '\r'){
-        if(loc[1] == '\n'){
-            loc += 2;
-            (*line)++;	    
-            //offset++;
-        }
-        else printf("Invalid char\n");
+      if(loc[1] == '\n'){
+        loc += 2;
+        (*line)++;	    
+        //offset++;
+      }
+      else{
+        printf("Invalid char\n");
+      }
     }
     else if(c == '\n'){
-        (*line)++; 
-        loc++;
-        //offset++;
+      (*line)++; 
+      loc++;
+      //offset++;
     }
     else break;
-
-    }while(1);
-    return loc - start;
+  }while(1);
+  return loc - start;
 }
 
 struct value_data {
@@ -130,14 +132,14 @@ typedef int (*jszl_key_handler)(struct jszlparser *);
 */
 static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handler string_handler
 ){
-struct jszlnode *pnode;
-unsigned length = 0;
-unsigned type = 0;
-long value = 0;
-int n;
-int numType;
-int isNegative;
-int errcode;
+  struct jszlnode *pnode;
+  unsigned length = 0;
+  unsigned type = 0;
+  long value = 0;
+  int n;
+  int numType;
+  int isNegative;
+  int errcode;
 
     switch(*parser->loc){
     case '"':
