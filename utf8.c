@@ -67,34 +67,33 @@
 #define WHITE_CLUB_SUIT 0x2667
 
 
-static void *
-
-utf8_encode(void *buf, long c)
+static void *utf8_encode(void *buf, long c)
 {
-    unsigned char *s = buf;
+  unsigned char *s = buf;
 
-    if (c >= (1L << 16)) {
-        s[0] = 0xf0 |  (c >> 18);
-        s[1] = 0x80 | ((c >> 12) & 0x3f);
-        s[2] = 0x80 | ((c >>  6) & 0x3f);
-        s[3] = 0x80 | ((c >>  0) & 0x3f);
-        return s + 4;
-    } else if (c >= (1L << 11)) {
-        s[0] = 0xe0 |  (c >> 12);
-        s[1] = 0x80 | ((c >>  6) & 0x3f);
-        s[2] = 0x80 | ((c >>  0) & 0x3f);
-        return s + 3;
-    } else if (c >= (1L << 7)) {
-        s[0] = 0xc0 |  (c >>  6);
-        s[1] = 0x80 | ((c >>  0) & 0x3f);
-        return s + 2;
-    } else {
-        s[0] = c;
-        return s + 1;
-    }
+  if (c >= (1L << 16)) {
+    s[0] = 0xf0 |  (c >> 18);
+    s[1] = 0x80 | ((c >> 12) & 0x3f);
+    s[2] = 0x80 | ((c >>  6) & 0x3f);
+    s[3] = 0x80 | ((c >>  0) & 0x3f);
+    return s + 4;
+  } else if (c >= (1L << 11)) {
+    s[0] = 0xe0 |  (c >> 12);
+    s[1] = 0x80 | ((c >>  6) & 0x3f);
+    s[2] = 0x80 | ((c >>  0) & 0x3f);
+    return s + 3;
+  } else if (c >= (1L << 7)) {
+    s[0] = 0xc0 |  (c >>  6);
+    s[1] = 0x80 | ((c >>  0) & 0x3f);
+    return s + 2;
+  } else {
+    s[0] = c;
+    return s + 1;
+  }
 }
 
-/* Decode the next character, C, from BUF, reporting errors in E.
+/*
+ * Decode the next character, C, from BUF, reporting errors in E.
  *
  * Since this is a branchless decoder, four bytes will be read from the
  * buffer regardless of the actual length of the next character. This
@@ -108,6 +107,10 @@ utf8_encode(void *buf, long c)
  * The function returns a pointer to the next character. When an error
  * occurs, this pointer will be a guess that depends on the particular
  * error, but it will always advance at least one byte.
+ *
+ * The function is used only when JszlEncode_Utf8Fast is set as the encoding.
+ * fast utf8 decoding can only be guaranteed from a stream encoded with at least
+ * three bytes of zero padding at the end.
  */
 
 static void * utf8_decode_fast(void *buf, uint32_t *c, int *e)

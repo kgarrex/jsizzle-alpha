@@ -70,74 +70,42 @@ void JSZL_API_DEFINE(jszl_init,
 }
 
 
-int JSZL_API_DEFINE(jszl_set_property,
+int JSZL_API_DEFINE(jszl_property,
   jszlhandle_t handle,
-  enum JszlProperty prop, ...)
+  enum JszlProp prop, ...)
 {
-    struct jszlcontext *pctx;
-    va_list args;
+  struct jszlcontext *pctx;
+  va_list args;
     
-    pctx = get_context(handle); 
+  pctx = get_context(handle); 
 
-    va_start(args, prop);
-    switch(prop){
+  va_start(args, prop);
+  switch(prop){
 
-    case JszlPropEncodeFormat:
+    case JszlProp_Encoding:
     {
-        break; 
+      int encode = va_arg(args, char);
+      pctx->encode = (char)encode;
+      break;
     }
 
-    case JSZLOPT_READ_BUFFER:
+    case JszlProp_ReadBuf:
     { 
-        unsigned int bufsize;
-        char *buffer;
-	buffer = va_arg(args, char *);
-        bufsize = va_arg(args, unsigned int);
-	pctx->buffer = buffer;
-	pctx->bufsize = bufsize;
-	break;
+      unsigned int bufsize;
+      char *buffer;
+      buffer = va_arg(args, char *);
+      bufsize = va_arg(args, unsigned int);
+      pctx->buffer = buffer;
+      pctx->bufsize = bufsize;
+      break;
     }
+  } //end switch
+  va_end(args);
 
-    } //end switch
-    va_end(args);
-
-    return JszlE_None;
+  return JszlE_None;
 }
 
 
-//jszlGetValue
-
-int JSZL_API_DEFINE(jszlGetValue,
- jszlhandle_t handle,
- unsigned int *type,
- const char *path
-){
-    struct jszlcontext *pctx;
-    struct jszlnode *pnode;
-
-    pctx = get_context(handle);
-
-    resolve_root(pctx, &pnode, *path);
-    if(JszlE_None != query_engine(pnode, &pnode, path+1)){
-        return 0;
-    }
-
-    //if(IS_ARRAY(*pnode) && 
-    
-    return JszlE_None;
-}
-
-
-//jszlSetEncode
-
-int JSZL_API_DEFINE(jszlSetEncode, jszlhandle_t handle, enum intncode encode){
-    struct jszlcontext *pctx;
-    pctx = get_context(handle);
-
-    pctx->encoding = encode;
-
-    return JszlE_None;
-}
 
 /*
 ** jszl_thread_init
@@ -185,68 +153,81 @@ struct jszlnode *current_namespace;
 }
 
 
-int key_handler(struct jszlparser *parser)
+static int key_handler(struct jszlparser *parser)
 {
-int len;
-unsigned hash;
-struct atom *atom;
+  int len;
+  unsigned hash;
+  struct atom *atom;
 
-    if(*parser->loc != '"'){
-        return 0;
-    }
+  if(*parser->loc != '"'){
+    return 0;
+  }
 
-    len = is_valid_key(parser->loc+1, global_seed, &hash);
-    if(parser->loc[len] != '"') return 0;
+  len = is_valid_key(parser->loc+1, global_seed, &hash);
+  if(parser->loc[len+1] != '"') return 0; //len+1 cause ptr starts at start quotes
 
-    atom = &parser->atom_pool[parser->atom_pool_idx++];
-    parser->curkey =
-        atom_add(g_atomTable, ATOM_TABLE_SIZE, atom, hash, len, parser->loc);
-    if(key_exists(parser->current_namespace, parser->curkey)){
-        return JszlE_DupKey; 
-    }
-    return len+1;
+  if(len > JSZL_MAX_KEY_LENGTH){
+    printf("Error: Key too long\n");
+  }
+
+  atom = &parser->atom_pool[parser->atom_pool_idx++];
+  parser->curkey = atom_add(g_atomTable, ATOM_TABLE_SIZE, atom, hash, len, parser->loc);
+  if(key_exists(parser->current_namespace, parser->curkey)){
+    return JszlE_DupKey; 
+  }
+  return len+1;
+}
+
+void * new_parser()
+{
+  void *parser = malloc(sizeof(struct jszlparser));
+
+  memset(parser, 0, sizeof(struct jszlparser));
+  return parser;
 }
 
 
 //jszlParseLocalFile
 
 int JSZL_API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path){
-struct jszlfile fs = {0};
-//struct jszlfile *pfs = &fs;
-const char *json;
+  struct jszlfile fs = {0};
+  //struct jszlfile *pfs = &fs;
+  const char *json;
 
-struct jszlcontext *ctx;
-struct jszlparser parser = {0};
-unsigned rslt;
+  struct jszlcontext *ctx;
+  struct jszlparser parser = {0};
+  unsigned rslt;
 
-    ctx = get_context(handle);
-    if(!ctx){
-        printf("Error: No context found\n"); 
-        return 0;
-    }
+  ctx = get_context(handle);
+  if(!ctx){
+    printf("Error: No context found\n"); 
+    return 0;
+  }
 
-    openFile(&fs, path, true);
-    json = mapFile(&fs);
+  ctx->parser = new_parser();
+  ctx->parser->atom_pool = ctx->atom_pool;
 
-    printf("%.*s\n", 300, json);
+  openFile(&fs, path);
+  json = mapFile(&fs);
 
-    //invoke the parsing engine on the mapped pointer
-    rslt = json_parser_engine(&parser, ctx, json, key_handler, string_handler);
-    if(rslt != JszlE_None){
-        printf("Error(%u): Failed to parse JSON file\n", rslt); 
-        return 0;
-    }
-    printf("Parse Success!\n");
 
-    char buf[8], *s = buf;
+  //invoke the parsing engine on the mapped pointer
+  rslt = parse_engine(&parser, ctx, json, string_handler);
+  if(rslt != JszlE_None){
+    printf("Error(%u): Failed to parse JSON file\n", rslt); 
+    return 0;
+  }
+  printf("Parse Success!\n");
 
-    //printf("UTF8 0x%x\n", utf8_encode(&buf, 1));
-    s = utf8_encode(s, WHITE_CHESS_KING);
-    s = utf8_encode(s, BLACK_SPADE_SUIT);
-    printf("UC %s\n", buf);
+  char buf[8], *s = buf;
 
-    //unmapFile(&fs);
-    return JszlE_None;
+  //printf("UTF8 0x%x\n", utf8_encode(&buf, 1));
+  s = utf8_encode(s, WHITE_CHESS_KING);
+  s = utf8_encode(s, BLACK_SPADE_SUIT);
+  printf("UC %s\n", buf);
+
+  //unmapFile(&fs);
+  return JszlE_None;
 }
 
 
@@ -265,8 +246,12 @@ struct jszlparser parser;
     //pctx->error_line = __line__;
 
     // open the file and load it into memory
-    openFile(&file, filename, 0);
-    err = json_parser_engine(&parser, pctx, filename, key_handler, string_handler);
+    openFile(&file, filename);
+    //new_parser(
+    //set_parser_key_handler(&parser, key_handler);
+    err = parse_engine(&parser, pctx, filename, string_handler);
+
+    //delete_parser(
 
     return JszlE_None;
 }
@@ -276,7 +261,7 @@ int JSZL_API_DEFINE(json_read,
  struct jszlparser *pstate, struct jszlcontext *handle, const char *str
 ){
 int rslt;
-    rslt = json_parser_engine(pstate, handle, str, key_handler, string_handler);
+    rslt = parse_engine(pstate, handle, str, string_handler);
     if(rslt != JszlE_None) return rslt;
     return JszlE_None;
 }
@@ -318,7 +303,7 @@ jszlopresult JSZL_API_DEFINE(jszl_set_document_scope,
 }
 
 
-int JSZL_API_DEFINE(jszl_is_document_root,
+int JSZL_API_DEFINE(jszl_document_is_root,
  jszlhandle_t handle, const char *path
 ){
     struct jszlcontext *pctx;

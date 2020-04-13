@@ -3,16 +3,16 @@
 
 #define ERRORMSG_INVALID_PRIMITIVE "Invalid primitive value" 
 
-enum JSizzleParsePhase {
-  ParsePhaseNone,
-  ParsePhaseArrayOptValue,
-  ParsePhaseArrayReqValue,
-  ParsePhaseArrayEndValue,
-  ParsePhaseObjectOptKey,
-  ParsePhaseObjectReqKey,
-  ParsePhaseObjectEndKey,
-  ParsePhaseObjectValue,
-  ParsePhaseObjectEndValue
+enum parse_phase {
+  ParsePhase_None,
+  ParsePhase_ArrayOptValue,
+  ParsePhase_ArrayReqValue,
+  ParsePhase_ArrayEndValue,
+  ParsePhase_ObjectOptKey,
+  ParsePhase_ObjectReqKey,
+  ParsePhase_ObjectEndKey,
+  ParsePhase_ObjectValue,
+  ParsePhase_ObjectEndValue
 };
 
 
@@ -63,6 +63,7 @@ delete_node(void *node)
 #define LOG_ERROR(e, msg)\
 do{\
 if(ERRORLOG_PROC && !ERRORLOG_PROC(e, msg, parser->line, 0)) { goto error_cleanup; }\
+parser->errcode = e; parser->errmsg = msg;\
 goto error_cleanup;\
 }while(0);
 
@@ -74,8 +75,12 @@ static long key_exists(struct jszlnode *value, struct atom *key)
   return 0;
 }
 
-/*
-** Skip whitespace
+/********************************************************//**
+ * The purpose of this function is to skip the whitespace
+ * in a JSON document during the parsing phase 
+ *
+ * @param loc the 
+ * @return the number of characters to skip
 */
 static unsigned inline skip_ws(const char *loc, unsigned *line)
 {
@@ -146,7 +151,7 @@ static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handl
     length = string_handler(parser);
 
     if(!length){
-      errcode = JSZLE_SYNTAX;
+      parser->errcode = JSZLE_SYNTAX;
       goto error_cleanup;
     }
     type = TYPE_STRING;
@@ -165,8 +170,13 @@ static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handl
     break;
 
     case 'f':
-    if(memcmp(parser->loc+1, "false", 5)){
-      errcode = JSZLE_SYNTAX;
+    if(parser->loc[1] != 'a' && 
+       parser->loc[2] != 'l' && 
+       parser->loc[3] != 's' && 
+       parser->loc[4] != 'e'){
+    //if(memcmp(parser->loc+1, "false", 5)){
+      printf("ERROR ON FALSE\n");
+      parser->errcode = JSZLE_SYNTAX;
       goto error_cleanup;
     }
     type = TYPE_BOOLEAN;
@@ -175,7 +185,7 @@ static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handl
 
     case 't':
     if(memcmp(parser->loc+1, "true", 4)){
-      errcode = JSZLE_SYNTAX;
+      parser->errcode = JSZLE_SYNTAX;
       goto error_cleanup;
     }
     type  = TYPE_BOOLEAN;
@@ -185,7 +195,7 @@ static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handl
 
     case 'n':
     if(memcmp(parser->loc+1, "null", 4)){
-      errcode = JSZLE_SYNTAX;
+      parser->errcode = JSZLE_SYNTAX;
       goto error_cleanup;
     }
     type = TYPE_NULL;
@@ -207,13 +217,13 @@ static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handl
         break;
       }
     }
-    errcode = JSZLE_INVALID_VALUE;
+    parser->errcode = JSZLE_INVALID_VALUE;
     goto error_cleanup;
   }
 
   pnode = new_node(value, (long)parser->curkey, type, length);
   if(!pnode){
-    errcode = JszlE_NoMemory;
+    parser->errcode = JszlE_NoMemory;
     goto error_cleanup; 
   }
   if(!parser->current_namespace->child){
@@ -249,12 +259,16 @@ if(GET_VALUE_TYPE((*parser->current_namespace)) == TYPE_ARRAY)\
 else\
     goto object_phase_comma;\
 
+/**
 
-static unsigned json_parser_engine(
+@param parser jj 
+
+*/
+
+static unsigned parse_engine(
   struct jszlparser *parser,
   struct jszlcontext *ctx,
   const char *str,
-  jszl_key_handler key_handler,
   jszl_string_handler string_handler
 ){
   struct jszlnode *current_namespace = 0;
@@ -273,18 +287,18 @@ static unsigned json_parser_engine(
   int n;
 
 
-  if(parser->phase){
+  if(parser->phase != ParsePhase_None){
     current_namespace = parser->ns_stack[parser->stack_idx].namespace;
 
     switch(parser->phase){
-      case ParsePhaseArrayOptValue  : goto array_phase_opt_value;
-      case ParsePhaseArrayReqValue  : goto array_phase_req_value;
-      case ParsePhaseArrayEndValue  : goto array_phase_comma;
-      case ParsePhaseObjectOptKey   : goto object_phase_opt_key;
-      case ParsePhaseObjectReqKey   : goto object_phase_req_key;
-      case ParsePhaseObjectEndKey   : goto object_phase_colon;
-      case ParsePhaseObjectValue    : goto object_phase_value;
-      case ParsePhaseObjectEndValue : goto object_phase_comma;
+      case ParsePhase_ArrayOptValue  : goto array_phase_opt_value;
+      case ParsePhase_ArrayReqValue  : goto array_phase_req_value;
+      case ParsePhase_ArrayEndValue  : goto array_phase_comma;
+      case ParsePhase_ObjectOptKey   : goto object_phase_opt_key;
+      case ParsePhase_ObjectReqKey   : goto object_phase_req_key;
+      case ParsePhase_ObjectEndKey   : goto object_phase_colon;
+      case ParsePhase_ObjectValue    : goto object_phase_value;
+      case ParsePhase_ObjectEndValue : goto object_phase_comma;
     }
   }
   else{
@@ -292,7 +306,7 @@ static unsigned json_parser_engine(
     parser->line = 1;
   }
 
-    parser->loc += skip_ws(parser->loc, &parser->line);
+  parser->loc += skip_ws(parser->loc, &parser->line);
   if(*parser->loc == '[') {
     parser->current_namespace = new_node(0, 0, TYPE_ARRAY, 0);
     if(!parser->current_namespace){
@@ -314,15 +328,13 @@ static unsigned json_parser_engine(
   ctx->CurrentNS = parser->root_namespace;
   move_loc((*parser), 1, 1);
 
-
   enter_namespace:
     if(GET_VALUE_TYPE((*parser->current_namespace)) == TYPE_OBJECT){
         goto object_phase_opt_key;
     }
 
-
   array_phase_opt_value:
-    parser->phase = ParsePhaseArrayOptValue;
+    parser->phase = ParsePhase_ArrayOptValue;
     n = skip_ws(parser->loc, &parser->line);
     move_loc((*parser), n, n);
     if(*parser->loc == ']'){
@@ -330,7 +342,7 @@ static unsigned json_parser_engine(
     }
 
   array_phase_req_value:
-    parser->phase = ParsePhaseArrayReqValue;
+    parser->phase = ParsePhase_ArrayReqValue;
     n = skip_ws(parser->loc, &parser->line);
     move_loc((*parser), n, n);
     type = validate_value(parser, 0);
@@ -351,10 +363,9 @@ static unsigned json_parser_engine(
     parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
     move_loc((*parser), 1, 1);
     goto enter_namespace;
-
     
   array_phase_comma:
-    parser->phase = ParsePhaseArrayEndValue;
+    parser->phase = ParsePhase_ArrayEndValue;
     n = skip_ws(parser->loc, &parser->line);
     move_loc((*parser), n, n);
     if(*parser->loc == ','){
@@ -369,7 +380,7 @@ static unsigned json_parser_engine(
     }
 
   object_phase_opt_key:
-    parser->phase = ParsePhaseObjectOptKey;
+    parser->phase = ParsePhase_ObjectOptKey;
     n = skip_ws(parser->loc, &parser->line);
     move_loc((*parser), n, n);
     if(*parser->loc == '}'){
@@ -377,22 +388,24 @@ static unsigned json_parser_engine(
     }
 
   object_phase_req_key:
-    parser->phase = ParsePhaseObjectReqKey;
+    parser->phase = ParsePhase_ObjectReqKey;
     n = skip_ws(parser->loc, &parser->line);
     move_loc((*parser), n, n);
     len = key_handler(parser);
     move_loc((*parser), len+1, len+1); //TODO account for unicode chars
+    printf("Key: %.*s\n", 4, parser->loc);
 
   object_phase_colon:
-    parser->phase = ParsePhaseObjectEndKey;
+    parser->phase = ParsePhase_ObjectEndKey;
     n = skip_ws(parser->loc, &parser->line);
     move_loc((*parser), n, n);
-    if(*parser->loc != ':')
-        LOG_ERROR(JSON_ERROR_SYNTAX, "Error on colon");
+    if(*parser->loc != ':'){
+        LOG_ERROR(JSON_ERROR_SYNTAX, "Error on object colon");
+    }
     move_loc((*parser), 1, 1);
 
   object_phase_value:
-    parser->phase = ParsePhaseObjectValue;
+    parser->phase = ParsePhase_ObjectValue;
     n = skip_ws(parser->loc, &parser->line);
     move_loc((*parser), n, n);
 
@@ -419,7 +432,7 @@ static unsigned json_parser_engine(
     type = 0;
 
   object_phase_comma:
-    parser->phase = ParsePhaseObjectEndValue;
+    parser->phase = ParsePhase_ObjectEndValue;
     n = skip_ws(parser->loc, &parser->line);
     move_loc((*parser), n, n);
     if(*parser->loc == ','){
@@ -435,7 +448,8 @@ static unsigned json_parser_engine(
     }
 
   error_cleanup:
-    printf("Error(%u) on line %u\n", 1, parser->line);
+    printf("Error on line %u: %s (%d)\n",
+    parser->line, parser->errmsg, parser->errcode);
     return 1;
  
   exit_root_namespace:

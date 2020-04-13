@@ -29,8 +29,8 @@
 /*
 ** The max length enforced for object keys. NOT IMPLEMENTED
 */
-#ifndef MAX_KEY_LENGTH
-#define MAX_KEY_LENGTH      32
+#ifndef JSZL_MAX_KEY_LENGTH
+#define JSZL_MAX_KEY_LENGTH    31 
 #endif
 
 

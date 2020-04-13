@@ -14,7 +14,7 @@
 
 #define INI_MEM_SIZE 8192
 
-#define TEST_FILE "H:\\Dev\\code\\jszl\\test.json"
+#define TEST_FILE "C:\\Dev\\code\\jsizzle\\test.json"
 int test_ini()
 {
 int success = 1;
@@ -240,87 +240,84 @@ int callback(void *ptr, int type)
 
 int main(int argc, char **argv)
 {
-    struct Person person = {0};
-    char buf[256];
-    //Run all test here
+  struct Person person = {0};
+  char buf[256];
+  //Run all test here
     
-    void *passback = 0;
+  void *passback = 0;
     
-    //RUN_TEST(test_dict);
-    //RUN_TEST(test_json);
+  //RUN_TEST(test_dict);
+  //RUN_TEST(test_json);
     
-    IN6_ADDR in6;
-    if(!inet_pton(AF_INET6, "fe80::f816:3eff:fe5f:419", &in6)){
-        printf("Invalid ip address\n"); 
-	return 0;
-    }
+  IN6_ADDR in6;
+  if(!inet_pton(AF_INET6, "fe80::f816:3eff:fe5f:419", &in6)){
+    printf("Invalid ip address\n"); 
+    return 0;
+  }
 
-    struct jszlvtable vt = {0};
-    jszlhandle_t handle;
-
-
-    jszl_init(&vt, JSZLINIT_MULTITHREADED);
-    //__jszlGlobalInit("Hello", 3, "MyFunc", &vt, JSZLINIT_MULTITHREADED);
-    handle = jszl_thread_init();
+  struct jszlvtable vt = {0};
+  jszlhandle_t handle;
 
 
-    jszl_parse_local_file(handle, TEST_FILE);
+  jszl_init(&vt, JSZLINIT_MULTITHREADED);
+  //__jszlGlobalInit("Hello", 3, "MyFunc", &vt, JSZLINIT_MULTITHREADED);
+  handle = jszl_thread_init();
 
 
-    jszl_set_property(handle, JszlPropEncodeFormat, JszlEncodeUtf8);
-    jszl_set_property(handle, JSZLOPT_READ_BUFFER, buf, 256); 
+  jszl_parse_local_file(handle, TEST_FILE);
 
 
-    if(jszl_set_document_scope(handle, "#.Object1")){
-        printf("Error: could not set scope 1\n");
-    }
+  jszl_property(handle, JszlProp_Encoding, JszlEncode_Utf8);
+  jszl_property(handle, JszlProp_ReadBuf, buf, 256); 
 
 
-    if(!jszl_is_document_root(handle, "#")){
-        printf("Not root\n"); 
-    }
-
-    int count = jszl_count_items(handle, "$.Person");
-    printf("Count: %d\n", count);
-
-    //jszl_set_property(handle, JszlProp, fd, 1);
+  if(jszl_set_document_scope(handle, "#.Object1")){
+    printf("Error: could not set scope 1\n");
+  }
 
 
-    //jszl_deserialize_object(handle, &person, PersonDesc,
-    //    ARRAY_SIZE(PersonDesc), "$.Person");
+  if(!jszl_document_is_root(handle, "#")){
+    printf("Not root\n"); 
+  }
 
-    //jszlIterate(handle, callback, passback, "$.Array");
+  int count = jszl_count_items(handle, "$.Person");
+  printf("Count: %d\n", count);
 
-    printf("Name: %s\n", person.name);
-    printf("Age: %u\n", person.age);
-    printf("Height: %s\n", person.height);
+  //jszl_set_property(handle, JszlProp, fd, 1);
 
-    //jszlForEach(handle, callback, pb, "$.Person");
 
-    //jszlSetEncoding(handle, JSZLENCODE_UTF8);
+  //jszl_deserialize_object(handle, &person, PersonDesc,
+  //    ARRAY_SIZE(PersonDesc), "$.Person");
 
-    //jszlSetUserContext(handle, ptr); 
+  //jszlIterate(handle, callback, passback, "$.Array");
 
-    //0xE29880
+  printf("Name: %s\n", person.name);
+  printf("Age: %u\n", person.age);
+  printf("Height: %s\n", person.height);
+
+  //jszlForEach(handle, callback, pb, "$.Person");
+
+
+  //0xE29880
 #define UTF8_CHAR 0x8098E2
 
 #define UTF8_CHAR_LEN(byte) (((0xE5000000 >> ((byte >> 3) & 0x1E)) & 3) +1)
-    //printf("%lc : %u : %u\n", UTF8_CHAR, UTF8_CHAR, UTF8_CHAR_LEN(UTF8_CHAR));
+  //printf("%lc : %u : %u\n", UTF8_CHAR, UTF8_CHAR, UTF8_CHAR_LEN(UTF8_CHAR));
 
-    printf("%u\n", ((0x24 >> 3) & 0x1E));
-    printf("%u\n",   ((0xE5000000 >> ((0xF8 >> 3) & 0x1E)) & 3) +1 ); //& 3) + 1));
+  printf("%u\n", ((0x24 >> 3) & 0x1E));
+  printf("%u\n",   ((0xE5000000 >> ((0xF8 >> 3) & 0x1E)) & 3) +1 ); //& 3) + 1));
 
-    printf("0x%x\n", 0); 
-    /*
-    printf("0x%x\n", in6.u.Word[0]);
-    printf("0x%x\n", in6.u.Word[1]);
-    printf("0x%x\n", in6.u.Word[2]);
-    printf("0x%x\n", in6.u.Word[3]);
-    printf("0x%x\n", in6.u.Word[4]);
-    printf("0x%x\n", in6.u.Word[5]);
-    printf("0x%x\n", in6.u.Word[6]);
-    printf("0x%x\n", in6.u.Word[7]);
-    */
+  printf("0x%x\n", 0); 
+  /*
+  printf("0x%x\n", in6.u.Word[0]);
+  printf("0x%x\n", in6.u.Word[1]);
+  printf("0x%x\n", in6.u.Word[2]);
+  printf("0x%x\n", in6.u.Word[3]);
+  printf("0x%x\n", in6.u.Word[4]);
+  printf("0x%x\n", in6.u.Word[5]);
+  printf("0x%x\n", in6.u.Word[6]);
+  printf("0x%x\n", in6.u.Word[7]);
+  */
 
-    return 0;
+  return 0;
 }

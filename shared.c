@@ -113,15 +113,16 @@ long is_valid_strict_key()
 
 long is_valid_key(const char *str, unsigned long seed, unsigned long *hash)
 {
-const char *s = str;
-unsigned c = *s;
-    if(!isalpha(c) && (c != '_') && (c != '$')) return 0;
-    do{
-        HASH_DJB2(seed, seed, c);
-        c = *++s;
-    } while(isalpha(c) || isdigit(c) || c == '_' || c == '$');
-    *hash = seed;
-    return s - str;
+  const char *s = str;
+  unsigned c = *s;
+
+  if(!isalpha(c) && (c != '_') && (c != '$')) return 0;
+  do{
+    HASH_DJB2(seed, seed, c);
+    c = *++s;
+  } while(isalpha(c) || isdigit(c) || c == '_' || c == '$');
+  *hash = seed;
+  return s - str;
 }
 
 /**
