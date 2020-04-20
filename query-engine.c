@@ -1,3 +1,4 @@
+#include "jszlpriv.h"
 
 static struct jszlnode *get_value_byidx
 (struct jszlnode *value, unsigned idx)
@@ -75,67 +76,3 @@ int get_node_byname(
   *ppnode = pnode;
   return n;
 }
-
-
-int query_engine(
-  struct jszlnode *pnode
- ,struct jszlnode **ppnode
- ,const char *path)
-{
-  const char *loc;
-  unsigned n, type, subtype;
-  unsigned short idx;
-
-
-  loc = path;
-
-begin_loop:
-
-  if(*loc == '\0'){
-    *ppnode =  pnode;
-    return JszlE_None;
-  }
-  else if(*loc == '['){ 
-    if(!IS_ARRAY((*pnode)) && !IS_OBJECT((*pnode)))
-    {
-      printf("Error: Must be structural node\n");
-      *ppnode = 0;
-      return JSON_ERROR_MUST_BE_ARRAY_OR_OBJECT;
-    }
-    loc++;
-    n = is_valid_number(loc, &type, &subtype);
-    idx = atouint(loc, n);
-    pnode = get_value_byidx(pnode, idx);
-    loc += n;
-    if(!pnode) return JszlE_KeyUndef;
-    if(*loc++ != ']'){
-      printf("Error: Syntax\n");	
-      *ppnode = 0;
-      return JSON_ERROR_SYNTAX;
-    }
-  }
-  else if(*loc == '.' || *loc == '/'){ //object
-    loc++;
-    if(!IS_OBJECT((*pnode))){
-      printf("Error: Must be an object\n");
-      *ppnode = 0;
-      return JSON_ERROR_TYPE_MISMATCH;
-    }
-    n = get_node_byname(pnode, &pnode, loc);
-    if(!n) return JszlE_KeyUndef;
-    loc += n;
-  }
-  else { //err
-  //should check if 'loc' is an object and a valid key name
-    if(IS_ARRAY( (*pnode) ) || IS_OBJECT((*pnode)))
-    {
-      printf("Error: No namespaces\n");
-      *ppnode = 0;
-      return JSON_ERROR_SYNTAX;
-    }
-  }
-  //do an atom find on the key
-  //ns = json_find_ns(node);
-  goto begin_loop;
-}
-

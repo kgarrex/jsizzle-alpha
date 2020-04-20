@@ -212,7 +212,7 @@ int JSZL_API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path
 
 
   //invoke the parsing engine on the mapped pointer
-  rslt = parse_engine(&parser, ctx, json, string_handler);
+  rslt = jsizzle_parse_engine(&parser, ctx, json, string_handler);
   if(rslt != JszlE_None){
     printf("Error(%u): Failed to parse JSON file\n", rslt); 
     return 0;
@@ -249,7 +249,7 @@ struct jszlparser parser;
     openFile(&file, filename);
     //new_parser(
     //set_parser_key_handler(&parser, key_handler);
-    err = parse_engine(&parser, pctx, filename, string_handler);
+    err = jsizzle_parse_engine(&parser, pctx, filename, string_handler);
 
     //delete_parser(
 
@@ -261,7 +261,7 @@ int JSZL_API_DEFINE(json_read,
  struct jszlparser *pstate, struct jszlcontext *handle, const char *str
 ){
 int rslt;
-    rslt = parse_engine(pstate, handle, str, string_handler);
+    rslt = jsizzle_parse_engine(pstate, handle, str, string_handler);
     if(rslt != JszlE_None) return rslt;
     return JszlE_None;
 }
@@ -290,7 +290,7 @@ jszlopresult JSZL_API_DEFINE(jszl_set_document_scope,
 
     //search the node tree and set the node returned
     resolve_root(pctx, &pnode, *path+1);
-    if(JszlE_None != query_engine(pnode, &pnode, path+1)){
+    if(JszlE_None != jsizzle_query_engine(pnode, path+1, &pnode)){
         return 0;
     }
 
@@ -320,7 +320,7 @@ int JSZL_API_DEFINE(jszl_document_is_root,
     }
 
     resolve_root(pctx, &pnode, *path);
-    if(JszlE_None != query_engine(pnode, &pnode, path+1)){
+    if(JszlE_None != jsizzle_query_engine(pnode, path+1, &pnode)){
         return 0; 
     }
 
@@ -376,7 +376,7 @@ int JSZL_API_DEFINE(jszlIterate,
     pctx = get_context(handle);
 
     resolve_root(pctx, &pnode, *path);
-    query_engine(pnode, &pnode, path+1);
+    jsizzle_query_engine(pnode, path+1, &pnode);
 
     if(GET_VALUE_TYPE((*pnode)) != TYPE_ARRAY) return JszlE_TypeMismatch;
 
@@ -414,7 +414,7 @@ int JSZL_API_DEFINE(jszl_deserialize_object,
     pctx = get_context(handle);
 
     resolve_root(pctx, &rootnode, *path);
-    msg = query_engine(rootnode, &rootnode, path+1);
+    msg = jsizzle_query_engine(rootnode, path+1, &rootnode);
     if(msg != JszlE_None) return msg;
     if(GET_VALUE_TYPE((*rootnode)) != TYPE_OBJECT) return JszlE_TypeMismatch;
 
@@ -523,7 +523,7 @@ struct jszlcontext *pctx;
 
     pctx = get_context(handle);
     resolve_root(pctx, &pnode, *path);
-    msg = query_engine(pnode, &pnode, path+1);
+    msg = jsizzle_query_engine(pnode, path+1, &pnode);
     if(msg != JszlE_None) return -1;
     if( GET_VALUE_TYPE((*pnode)) != TYPE_ARRAY) return JszlE_TypeMismatch; 
     return pnode->count;

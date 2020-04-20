@@ -1,19 +1,9 @@
 
+#include "jszlpriv.h"
+
 #define ERRORLOG_PROC (parser->log_error)
 
 #define ERRORMSG_INVALID_PRIMITIVE "Invalid primitive value" 
-
-enum parse_phase {
-  ParsePhase_None,
-  ParsePhase_ArrayOptValue,
-  ParsePhase_ArrayReqValue,
-  ParsePhase_ArrayEndValue,
-  ParsePhase_ObjectOptKey,
-  ParsePhase_ObjectReqKey,
-  ParsePhase_ObjectEndKey,
-  ParsePhase_ObjectValue,
-  ParsePhase_ObjectEndValue
-};
 
 
 void * allocmem(int size)
@@ -75,43 +65,6 @@ static long key_exists(struct jszlnode *value, struct atom *key)
   return 0;
 }
 
-/********************************************************//**
- * The purpose of this function is to skip the whitespace
- * in a JSON document during the parsing phase 
- *
- * @param loc the 
- * @return the number of characters to skip
-*/
-static unsigned inline skip_ws(const char *loc, unsigned *line)
-{
-  unsigned c;
-  const void *start = loc;
-  do{
-
-    c = *loc;
-    if(c == ' ' || c == '\t'){
-      loc++;
-    }
-    else if(c == '\r'){
-      if(loc[1] == '\n'){
-        loc += 2;
-        (*line)++;	    
-        //offset++;
-      }
-      else{
-        printf("Invalid char\n");
-      }
-    }
-    else if(c == '\n'){
-      (*line)++; 
-      loc++;
-      //offset++;
-    }
-    else break;
-  }while(1);
-  return loc - start;
-}
-
 struct value_data {
   int type;
   unsigned length;
@@ -119,10 +72,6 @@ struct value_data {
   unsigned numType;
   unsigned long hash;
 };
-
-
-typedef int (*jszl_string_handler)(struct jszlparser *);
-typedef int (*jszl_key_handler)(struct jszlparser *);
 
 
 /* Macro to advance the current location of the parser
@@ -259,201 +208,3 @@ if(GET_VALUE_TYPE((*parser->current_namespace)) == TYPE_ARRAY)\
 else\
     goto object_phase_comma;\
 
-/**
-
-@param parser jj 
-
-*/
-
-static unsigned parse_engine(
-  struct jszlparser *parser,
-  struct jszlcontext *ctx,
-  const char *str,
-  jszl_string_handler string_handler
-){
-  struct jszlnode *current_namespace = 0;
-  const char *loc;
-  struct atom * atom;
-  struct value_data vd = {0};
-
-  void * l_atomTable = g_AtomTable;
-
-  unsigned type = 0;
-  unsigned subtype = 0;
-  unsigned numtype = 0;
-  unsigned isNegative = 0;
-  unsigned len = 0;
-  unsigned hash;
-  int n;
-
-
-  if(parser->phase != ParsePhase_None){
-    current_namespace = parser->ns_stack[parser->stack_idx].namespace;
-
-    switch(parser->phase){
-      case ParsePhase_ArrayOptValue  : goto array_phase_opt_value;
-      case ParsePhase_ArrayReqValue  : goto array_phase_req_value;
-      case ParsePhase_ArrayEndValue  : goto array_phase_comma;
-      case ParsePhase_ObjectOptKey   : goto object_phase_opt_key;
-      case ParsePhase_ObjectReqKey   : goto object_phase_req_key;
-      case ParsePhase_ObjectEndKey   : goto object_phase_colon;
-      case ParsePhase_ObjectValue    : goto object_phase_value;
-      case ParsePhase_ObjectEndValue : goto object_phase_comma;
-    }
-  }
-  else{
-    parser->loc = str;
-    parser->line = 1;
-  }
-
-  parser->loc += skip_ws(parser->loc, &parser->line);
-  if(*parser->loc == '[') {
-    parser->current_namespace = new_node(0, 0, TYPE_ARRAY, 0);
-    if(!parser->current_namespace){
-      LOG_ERROR(JszlE_NoMemory, 0);
-    }
-    parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
-  }
-  else if(*parser->loc == '{') { 
-    parser->current_namespace = new_node(0, 0, TYPE_OBJECT, 0);
-    if(!parser->current_namespace) {
-      LOG_ERROR(JszlE_NoMemory, 0);
-    }
-    parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
-  }
-  else {
-      LOG_ERROR(JSON_ERROR_TYPE_MISMATCH, 0);  
-  }
-  parser->root_namespace = parser->current_namespace;
-  ctx->CurrentNS = parser->root_namespace;
-  move_loc((*parser), 1, 1);
-
-  enter_namespace:
-    if(GET_VALUE_TYPE((*parser->current_namespace)) == TYPE_OBJECT){
-        goto object_phase_opt_key;
-    }
-
-  array_phase_opt_value:
-    parser->phase = ParsePhase_ArrayOptValue;
-    n = skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc == ']'){
-        leave_namespace();
-    }
-
-  array_phase_req_value:
-    parser->phase = ParsePhase_ArrayReqValue;
-    n = skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    type = validate_value(parser, 0);
-    switch(type){
-        case TYPE_OBJECT:
-        case TYPE_ARRAY:
-            break;
-        case 0:
-            //value error
-        default:
-            goto array_phase_comma;
-    }
-    parser->curkey = 0;
-    parser->current_namespace = parser->prevnode; //namespace node is stored here
-    if(++parser->stack_idx == MAX_NAMESPACE_LEVEL){
-        return 0; //exit, out of namespace memory 
-    }
-    parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
-    move_loc((*parser), 1, 1);
-    goto enter_namespace;
-    
-  array_phase_comma:
-    parser->phase = ParsePhase_ArrayEndValue;
-    n = skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc == ','){
-      move_loc((*parser), 1, 1);
-      goto array_phase_req_value;
-    }
-    else if(*parser->loc == ']'){
-      leave_namespace();
-    }
-    else{
-      LOG_ERROR(JSON_ERROR_SYNTAX, "Error on comma in array");
-    }
-
-  object_phase_opt_key:
-    parser->phase = ParsePhase_ObjectOptKey;
-    n = skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc == '}'){
-      leave_namespace();
-    }
-
-  object_phase_req_key:
-    parser->phase = ParsePhase_ObjectReqKey;
-    n = skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    len = key_handler(parser);
-    move_loc((*parser), len+1, len+1); //TODO account for unicode chars
-    printf("Key: %.*s\n", 4, parser->loc);
-
-  object_phase_colon:
-    parser->phase = ParsePhase_ObjectEndKey;
-    n = skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc != ':'){
-        LOG_ERROR(JSON_ERROR_SYNTAX, "Error on object colon");
-    }
-    move_loc((*parser), 1, 1);
-
-  object_phase_value:
-    parser->phase = ParsePhase_ObjectValue;
-    n = skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-
-    type = validate_value(parser, 0);
-    switch(type){
-      case TYPE_OBJECT:
-      case TYPE_ARRAY:
-        break;
-      case 0:
-        //value error
-      default:
-        goto object_phase_comma;
-    }
-    parser->curkey = 0;
-    parser->current_namespace = parser->prevnode;
-    if(++parser->stack_idx == MAX_NAMESPACE_LEVEL){
-      return 0; 
-    }
-    parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
-    move_loc((*parser), 1, 1);
-    goto enter_namespace;
-
-    parser->curkey = 0;
-    type = 0;
-
-  object_phase_comma:
-    parser->phase = ParsePhase_ObjectEndValue;
-    n = skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc == ','){
-      move_loc((*parser), 1, 1);
-      goto object_phase_req_key;
-    }
-    else
-    if(*parser->loc == '}'){
-      leave_namespace();
-    }
-    else {
-      LOG_ERROR(JSON_ERROR_SYNTAX, "Error on comma in object");
-    }
-
-  error_cleanup:
-    printf("Error on line %u: %s (%d)\n",
-    parser->line, parser->errmsg, parser->errcode);
-    return 1;
- 
-  exit_root_namespace:
-    parser->phase = 0;
-    return JszlE_None;
-
-} //END ENGINE

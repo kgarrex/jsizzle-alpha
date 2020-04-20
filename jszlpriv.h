@@ -83,6 +83,63 @@
 
 
 static const union {unsigned char b[4]; uint32_t v;} __host_order__ = {{0,1,2,3}};
+
+
+enum ParsePhase {
+  ParsePhase_None,
+  ParsePhase_ArrayOptValue,
+  ParsePhase_ArrayReqValue,
+  ParsePhase_ArrayEndValue,
+  ParsePhase_ObjectOptKey,
+  ParsePhase_ObjectReqKey,
+  ParsePhase_ObjectEndKey,
+  ParsePhase_ObjectValue,
+  ParsePhase_ObjectEndValue
+};
+
+
+
+
+typedef int (*jszl_string_handler)(struct jszlparser *);
+typedef int (*jszl_key_handler)(struct jszlparser *);
+
+
+
+/********
+ * jsizzle_parse_engine
+ *
+ * @param[in] parser
+ * @param[in] ctx  t
+ *
+ *
+ * @return  the error code
+ *
+**********/
+
+int jsizzle_parser_engine(
+  struct jszlparser *parser,
+  struct jszlcontext *ctx,
+  const char *str,
+  jszl_string_handler string_handler
+);
+
+
+/**************************//*
+ * jsizzle_query_engine
+ *
+ * @param[in] pnode JSON used to search in
+ * @param[in]
+ * @param[out] ppnode returns a JSON node that was found. NULL if not found
+ *
+ * @return the error code
+ *
+ ************************/
+
+int jsizzle_query_engine(
+  struct jszlnode *pnode,
+  const char *path,
+  struct jszlnode **ppnode
+);
  
 
 #endif

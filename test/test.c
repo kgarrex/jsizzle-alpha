@@ -6,7 +6,7 @@
 #include <assert.h>
 //#include "..\..\core.h"
 
-#include "..\jszlpubl.h"
+#include "..\jsizzle.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
