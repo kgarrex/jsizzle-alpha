@@ -14,7 +14,7 @@
 
 #define INI_MEM_SIZE 8192
 
-#define TEST_FILE "H:\\Dev\\code\\jsizzle\\test.json"
+#define TEST_FILE ".\\test.json"
 int test_ini()
 {
 int success = 1;
