@@ -119,11 +119,7 @@ static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handl
     break;
 
     case 'f':
-    if(parser->loc[1] != 'a' && 
-       parser->loc[2] != 'l' && 
-       parser->loc[3] != 's' && 
-       parser->loc[4] != 'e'){
-    //if(memcmp(parser->loc+1, "false", 5)){
+      if(memcmp(parser->loc+1, "false", 5)){
       printf("ERROR ON FALSE\n");
       parser->errcode = JSZLE_SYNTAX;
       goto error_cleanup;

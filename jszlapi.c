@@ -172,6 +172,7 @@ static int key_handler(struct jszlparser *parser)
 
   atom = &parser->atom_pool[parser->atom_pool_idx++];
   parser->curkey = atom_add(g_atomTable, ATOM_TABLE_SIZE, atom, hash, len, parser->loc);
+  assert(parser->curkey);
   if(key_exists(parser->current_namespace, parser->curkey)){
     return JszlE_DupKey; 
   }

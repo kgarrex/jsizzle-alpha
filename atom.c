@@ -31,7 +31,7 @@ unsigned index = 0;
     atom = atom_find(atom_table, atom_table_size, hash, len);
     if(atom) return atom;
     atom = atom_to_add;
-    assert(atom);
+    if(!atom) return 0;
     atom->next = 0;
     atom->length = len;
     atom->data = data;
