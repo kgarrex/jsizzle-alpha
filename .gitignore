@@ -1,12 +1,6 @@
-<<<<<<< HEAD
-.exe
-.swp
-.obj
-.exp
-.lib
-=======
 *.swp
 *.exe
 *.obj
 *.lib
->>>>>>> 93e843839c2f562f59e8930becc3a554649cbbdb
+*.exp
+*.swo
