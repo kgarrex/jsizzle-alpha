@@ -174,7 +174,7 @@ jszlhandle_t handle;
     char jsonPath[64];
     int count;
 
-    count = jszl_count_items(handle, "$.properties.fakeArray");
+    count = jszl_count(handle, "$.properties.fakeArray");
     if(count == -1);
     printf("Count: %d\n", count);
 
@@ -263,8 +263,9 @@ int main(int argc, char **argv)
   //__jszlGlobalInit("Hello", 3, "MyFunc", &vt, JSZLINIT_MULTITHREADED);
   handle = jszl_thread_init();
 
-
+  printf("Here\n");
   jszl_parse_local_file(handle, TEST_FILE);
+
 
 
   jszl_property(handle, JszlProp_Encoding, JszlEncode_Utf8);
@@ -276,11 +277,11 @@ int main(int argc, char **argv)
   }
 
 
-  if(!jszl_document_is_root(handle, "#")){
+  if(!jszl_is_root(handle, "#")){
     printf("Not root\n"); 
   }
 
-  int count = jszl_count_items(handle, "$.Person");
+  int count = jszl_count(handle, "$.Person");
   printf("Count: %d\n", count);
 
   //jszl_set_property(handle, JszlProp, fd, 1);

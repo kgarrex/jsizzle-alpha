@@ -38,24 +38,24 @@
 ** Value structure used to store value info
 */
 struct jszlnode{
-  short type;
-  union{
-    unsigned short count;
-    unsigned short length;
-  };
-  struct jszlnode *next;
-  struct atom *name;
+	short type;
+	union{
+		unsigned short count;
+		unsigned short length;
+	};
+	struct jszlnode *next;
+	struct atom *name;
 
-  union{
-    void *data;
-    unsigned long value;
-    struct jszlnode *child;
-    char *string;
-    int boolean;
-    unsigned unum;
-    signed snum;
-    unsigned hash;
-  };
+	union{
+		void *data;
+		unsigned long value;
+		struct jszlnode *child;
+		char *string;
+		int boolean;
+		unsigned unum;
+		signed snum;
+		unsigned hash;
+	};
 };
 
 
@@ -63,12 +63,12 @@ struct jszlnode{
 ** Atom structure used for hashing strings
 */
 struct atom {
-  struct atom *next;
-  const void *data;
-  unsigned long hash;
-  //potentially use this field to set flags. Ex: Unicode
-  unsigned short refcount;
-  unsigned length;
+	struct atom *next;
+	const void *data;
+	unsigned long hash;
+	//potentially use this field to set flags. Ex: Unicode
+	unsigned short refcount;
+	unsigned length;
 };
 
 
@@ -77,15 +77,15 @@ struct atom {
 **
 */
 struct {
-  struct atom * table[ATOM_TABLE_SIZE];
+	struct atom * table[ATOM_TABLE_SIZE];
 
 #if defined(_WIN32) || defined(_WIN64)
-  CRITICAL_SECTION syncobj; 
+	CRITICAL_SECTION syncobj; 
  
 #elif defined(_KERNEL_MODE)
-  
+	
 #elif defined(__linux__) || defined(__GNUC__)
-  pthread_mutex_t syncobj;
+	pthread_mutex_t syncobj;
 
 #endif
 
@@ -97,35 +97,35 @@ struct atom * g_atomTable[ATOM_TABLE_SIZE];
 ** TYPE DECLARATIONS
 */
 struct jszlcontext {
-  struct jszlvtable *vt;
+	struct jszlvtable *vt;
 
 //struct json_node *schema;
-  struct jszlnode *RootNS;
-  struct jszlnode *CurrentNS;
+	struct jszlnode *RootNS;
+	struct jszlnode *CurrentNS;
 
-  char *buffer;
-  unsigned int bufsize;
+	char *buffer;
+	unsigned int bufsize;
 
-  struct jszlparser *parser;
+	struct jszlparser *parser;
 
-  struct jszlnode  node_pool[512];
-  unsigned int node_pool_size;
+	struct jszlnode	node_pool[512];
+	unsigned int node_pool_size;
 
-  struct atom  atom_pool[512];
-  unsigned int atom_pool_size;
+	struct atom	atom_pool[512];
+	unsigned int atom_pool_size;
 
-  const char *error_file;
-  unsigned int error_line;
+	const char *error_file;
+	unsigned int error_line;
 
-  void *databuf; // field where all data is copied
-  unsigned long databufsize;
+	void *databuf; // field where all data is copied
+	unsigned long databufsize;
 
-  int OpError;
-  void *UserContext;
-  unsigned int ThreadId;
+	int OpError;
+	void *UserContext;
+	unsigned int ThreadId;
 
-  char encode;
-  //unsigned int ProcessorNumber;
+	char encode;
+	//unsigned int ProcessorNumber;
 };
 
 /*
@@ -133,57 +133,57 @@ struct jszlcontext {
 ** on the stack right before a parse for the highest memory and execution efficiency
 */
 struct jszlparser {
-  JSON_ERROR_HANDLER log_error;
+	JSON_ERROR_HANDLER log_error;
 
-  struct jszlnode *root_namespace;
-  struct jszlnode *current_namespace;
+	struct jszlnode *root_namespace;
+	struct jszlnode *current_namespace;
 
-  struct jszlnode *node_pool;
-  unsigned int node_pool_size;
-  unsigned int pool_idx;
+	struct jszlnode *node_pool;
+	unsigned int node_pool_size;
+	unsigned int pool_idx;
 
-  struct atom *atom_pool;
-  unsigned int atom_pool_size;
-  unsigned int atom_idx;
+	struct atom *atom_pool;
+	unsigned int atom_pool_size;
+	unsigned int atom_idx;
 
-  int errcode;
-  const char *errmsg;
+	int errcode;
+	const char *errmsg;
 
-  struct {
-    struct jszlnode *namespace; 
-  } ns_stack[MAX_NAMESPACE_LEVEL];
-  char stack_idx;
+	struct {
+		struct jszlnode *namespace; 
+	} ns_stack[MAX_NAMESPACE_LEVEL];
+	char stack_idx;
 
-  struct {
-    int e;
-    const char *msg;
-    unsigned int line;
-    unsigned int offset; 
-  } err_stack[ERROR_STACK_SIZE];
+	struct {
+		int e;
+		const char *msg;
+		unsigned int line;
+		unsigned int offset; 
+	} err_stack[ERROR_STACK_SIZE];
 
-  unsigned line; //current line 
-  unsigned offset; //current line offset
-  const char *loc; //current location
-  struct atom *curkey;
-  struct jszlnode * prevnode;
-  char phase;
+	unsigned line; //current line 
+	unsigned offset; //current line offset
+	const char *loc; //current location
+	struct atom *curkey;
+	struct jszlnode * prevnode;
+	char phase;
 
-  unsigned int value_pool_idx;
-  unsigned int atom_pool_idx;
+	unsigned int value_pool_idx;
+	unsigned int atom_pool_idx;
 
-  //struct node **node_pool;
+	//struct node **node_pool;
 
-  union {
-    struct json_reader {int NOT_USED;} reader; 
-    struct json_writer {int NOT_USED;} writer;
-  };
+	union {
+		struct json_reader {int NOT_USED;} reader; 
+		struct json_writer {int NOT_USED;} writer;
+	};
 
-  int (*key_handler)(struct jszlparser *);
+	int (*key_handler)(struct jszlparser *);
 
 };
 
 const char *g_errmsg[MAX_JSZLERR] = {
-  "The document root is missing"
+	"The document root is missing"
 };
 
 #include "..\core.h"
@@ -217,7 +217,7 @@ struct atom * g_AtomTable[ATOM_TABLE_SIZE];
 // TODO add JSON schema functionality
 // TODO EVENTUALLY (sometime in distant future) add support for custom schemas
 // FIXED TODO atom table access should go through a local pointer
-//     this is to allow for flexible atom table memory (global vs. private)
+//		 this is to allow for flexible atom table memory (global vs. private)
 // TODO add reference counting to atoms to allow deletions
 
 /* TODO
@@ -237,7 +237,7 @@ struct atom * g_AtomTable[ATOM_TABLE_SIZE];
 #error Error: Must define MAX_STRING_LENGTH between 0 - 65536
 #endif
 
-#if !defined(JSZL_MAX_KEY_LENGTH)  || JSZL_MAX_KEY_LENGTH > 256
+#if !defined(JSZL_MAX_KEY_LENGTH)	|| JSZL_MAX_KEY_LENGTH > 256
 #error Error: Must define JSZL_MAX_KEY_LENGTH between 0 - 256
 #endif
 
@@ -249,12 +249,12 @@ struct atom * g_AtomTable[ATOM_TABLE_SIZE];
 
 
 union type_buffer{
-    unsigned ipv4;
-    union ipv6 ipv6;
+		unsigned ipv4;
+		union ipv6 ipv6;
 };
 
 typedef void (*key_handler_cb)(
-  struct json_object *obj
+	struct json_object *obj
  ,unsigned hash
  ,unsigned len
 );
@@ -264,6 +264,43 @@ typedef void (*key_handler_cb)(
 
 
 #include "parse-engine.c"
+
+
+
+/************************************************//**
+ * key_handler
+ * @brief Handle a JSON object key
+ *
+ * @return the size of the key in bytes
+ *
+ ************************************************/
+
+static int key_handler(struct jszlparser *parser)
+{
+	int len;
+	unsigned hash;
+	struct atom *atom;
+
+	if(*parser->loc != '"'){
+		return 0;
+	}
+
+	len = is_valid_key(parser->loc+1, global_seed, &hash);
+	if(parser->loc[len+1] != '"') return 0; //len+1 cause ptr starts at start quotes
+
+	if(len > JSZL_MAX_KEY_LENGTH){
+		printf("Error: Key too long\n");
+	}
+
+	//atom = &parser->atom_pool[parser->atom_pool_idx++];
+	atom = malloc(sizeof(struct atom));
+	parser->curkey = atom_add(g_atomTable, ATOM_TABLE_SIZE, atom, hash, len, parser->loc);
+	if(!parser->curkey) return 0;
+	if(key_exists(parser->current_namespace, parser->curkey)){
+		return JszlE_DupKey; 
+	}
+	return len+1;
+}
 
 
 /********************************************************//**
@@ -279,32 +316,32 @@ typedef void (*key_handler_cb)(
 
 static unsigned inline parser_skip_ws(const char *loc, unsigned *line)
 {
-  unsigned c;
-  const void *start = loc;
-  do{
+	unsigned c;
+	const void *start = loc;
+	do{
 
-    c = *loc;
-    if(c == ' ' || c == '\t'){
-      loc++;
-    }
-    else if(c == '\r'){
-      if(loc[1] == '\n'){
-        loc += 2;
-        (*line)++;	    
-        //offset++;
-      }
-      else{
-        printf("Invalid char\n");
-      }
-    }
-    else if(c == '\n'){
-      (*line)++; 
-      loc++;
-      //offset++;
-    }
-    else break;
-  }while(1);
-  return loc - start;
+		c = *loc;
+		if(c == ' ' || c == '\t'){
+			loc++;
+		}
+		else if(c == '\r'){
+			if(loc[1] == '\n'){
+				loc += 2;
+				(*line)++;			
+				//offset++;
+			}
+			else{
+				printf("Invalid char\n");
+			}
+		}
+		else if(c == '\n'){
+			(*line)++; 
+			loc++;
+			//offset++;
+		}
+		else break;
+	}while(1);
+	return loc - start;
 }
 
 
@@ -315,208 +352,296 @@ static unsigned inline parser_skip_ws(const char *loc, unsigned *line)
  * @brief Parse a JSON string
  *
  * @param[in] parser
- * @param[in] ctx  t
+ * @param[in] ctx	t
  *
  *
- * @return  the error code
+ * @return	the error code
  *
  ********************************/
 
 static unsigned jsizzle_parse_engine(
-  struct jszlparser *parser,
-  struct jszlcontext *ctx,
-  const char *str,
-  jszl_string_handler string_handler
+	struct jszlparser *parser,
+	struct jszlcontext *ctx,
+	const char *str,
+	jszl_string_handler string_handler
 ){
-  struct jszlnode *current_namespace = 0;
-  const char *loc;
-  struct atom * atom;
-  struct value_data vd = {0};
+	struct jszlnode *current_namespace = 0;
+	const char *loc;
+	struct atom * atom;
+	struct value_data vd = {0};
 
-  void * l_atomTable = g_AtomTable;
+	void * l_atomTable = g_AtomTable;
 
-  unsigned type = 0;
-  unsigned subtype = 0;
-  unsigned numtype = 0;
-  unsigned isNegative = 0;
-  unsigned len = 0;
-  unsigned hash;
-  int n;
+	unsigned type = 0;
+	unsigned subtype = 0;
+	unsigned numtype = 0;
+	unsigned isNegative = 0;
+	unsigned len = 0;
+	unsigned hash;
+	int n;
 
 
-  if(parser->phase != ParsePhase_None){
-    current_namespace = parser->ns_stack[parser->stack_idx].namespace;
+	if(parser->phase != ParsePhase_None){
+		current_namespace = parser->ns_stack[parser->stack_idx].namespace;
 
-    switch(parser->phase){
-      case ParsePhase_ArrayOptValue  : goto array_phase_opt_value;
-      case ParsePhase_ArrayReqValue  : goto array_phase_req_value;
-      case ParsePhase_ArrayEndValue  : goto array_phase_comma;
-      case ParsePhase_ObjectOptKey   : goto object_phase_opt_key;
-      case ParsePhase_ObjectReqKey   : goto object_phase_req_key;
-      case ParsePhase_ObjectEndKey   : goto object_phase_colon;
-      case ParsePhase_ObjectValue    : goto object_phase_value;
-      case ParsePhase_ObjectEndValue : goto object_phase_comma;
-    }
-  }
-  else{
-    parser->loc = str;
-    parser->line = 1;
-  }
+		switch(parser->phase){
+			case ParsePhase_ArrayOptValue	: goto array_phase_opt_value;
+			case ParsePhase_ArrayReqValue	: goto array_phase_req_value;
+			case ParsePhase_ArrayEndValue	: goto array_phase_comma;
+			case ParsePhase_ObjectOptKey	 : goto object_phase_opt_key;
+			case ParsePhase_ObjectReqKey	 : goto object_phase_req_key;
+			case ParsePhase_ObjectEndKey	 : goto object_phase_colon;
+			case ParsePhase_ObjectValue		: goto object_phase_value;
+			case ParsePhase_ObjectEndValue : goto object_phase_comma;
+		}
+	}
+	else{
+		parser->loc = str;
+		parser->line = 1;
+	}
 
-  parser->loc += parser_skip_ws(parser->loc, &parser->line);
-  if(*parser->loc == '[') {
-    parser->current_namespace = new_node(0, 0, TYPE_ARRAY, 0);
-    if(!parser->current_namespace){
-      LOG_ERROR(JszlE_NoMemory, 0);
-    }
-    parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
-  }
-  else if(*parser->loc == '{') { 
-    parser->current_namespace = new_node(0, 0, TYPE_OBJECT, 0);
-    if(!parser->current_namespace) {
-      LOG_ERROR(JszlE_NoMemory, 0);
-    }
-    parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
-  }
-  else {
-      LOG_ERROR(JSON_ERROR_TYPE_MISMATCH, 0);  
-  }
-  parser->root_namespace = parser->current_namespace;
-  ctx->CurrentNS = parser->root_namespace;
-  move_loc((*parser), 1, 1);
+	parser->loc += parser_skip_ws(parser->loc, &parser->line);
+	if(*parser->loc == '[') {
+		parser->current_namespace = new_node(0, 0, TYPE_ARRAY, 0);
+		if(!parser->current_namespace){
+			LOG_ERROR(JszlE_NoMemory, 0);
+		}
+		parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
+	}
+	else if(*parser->loc == '{') { 
+		parser->current_namespace = new_node(0, 0, TYPE_OBJECT, 0);
+		if(!parser->current_namespace) {
+			LOG_ERROR(JszlE_NoMemory, 0);
+		}
+		parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
+	}
+	else {
+			LOG_ERROR(JSON_ERROR_TYPE_MISMATCH, 0);	
+	}
+	parser->root_namespace = parser->current_namespace;
+	ctx->CurrentNS = parser->root_namespace;
+	move_loc((*parser), 1, 1);
 
-  enter_namespace:
-    if(GET_VALUE_TYPE((*parser->current_namespace)) == TYPE_OBJECT){
-        goto object_phase_opt_key;
-    }
+	enter_namespace:
+		if(GET_VALUE_TYPE((*parser->current_namespace)) == TYPE_OBJECT){
+				goto object_phase_opt_key;
+		}
 
-  array_phase_opt_value:
-    parser->phase = ParsePhase_ArrayOptValue;
-    n = parser_skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc == ']'){
-        leave_namespace();
-    }
+	array_phase_opt_value:
+		parser->phase = ParsePhase_ArrayOptValue;
+		n = parser_skip_ws(parser->loc, &parser->line);
+		move_loc((*parser), n, n);
+		if(*parser->loc == ']'){
+				leave_namespace();
+		}
 
-  array_phase_req_value:
-    parser->phase = ParsePhase_ArrayReqValue;
-    n = parser_skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    type = validate_value(parser, 0);
-    switch(type){
-        case TYPE_OBJECT:
-        case TYPE_ARRAY:
-            break;
-        case 0:
-            //value error
-        default:
-            goto array_phase_comma;
-    }
-    parser->curkey = 0;
-    parser->current_namespace = parser->prevnode; //namespace node is stored here
-    if(++parser->stack_idx == MAX_NAMESPACE_LEVEL){
-        return 0; //exit, out of namespace memory 
-    }
-    parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
-    move_loc((*parser), 1, 1);
-    goto enter_namespace;
-    
-  array_phase_comma:
-    parser->phase = ParsePhase_ArrayEndValue;
-    n = parser_skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc == ','){
-      move_loc((*parser), 1, 1);
-      goto array_phase_req_value;
-    }
-    else if(*parser->loc == ']'){
-      leave_namespace();
-    }
-    else{
-      LOG_ERROR(JSON_ERROR_SYNTAX, "Error on comma in array");
-    }
+	array_phase_req_value:
+		parser->phase = ParsePhase_ArrayReqValue;
+		n = parser_skip_ws(parser->loc, &parser->line);
+		move_loc((*parser), n, n);
+		type = validate_value(parser, 0);
+		switch(type){
+			case TYPE_OBJECT:
+			case TYPE_ARRAY:
+				break;
+			case 0:
+				//value error
+			default:
+				goto array_phase_comma;
+		}
+		parser->curkey = 0;
+		parser->current_namespace = parser->prevnode; //namespace node is stored here
+		if(++parser->stack_idx == MAX_NAMESPACE_LEVEL){
+				return 0; //exit, out of namespace memory 
+		}
+		parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
+		move_loc((*parser), 1, 1);
+		goto enter_namespace;
+		
+	array_phase_comma:
+		parser->phase = ParsePhase_ArrayEndValue;
+		n = parser_skip_ws(parser->loc, &parser->line);
+		move_loc((*parser), n, n);
+		if(*parser->loc == ','){
+			move_loc((*parser), 1, 1);
+			goto array_phase_req_value;
+		}
+		else if(*parser->loc == ']'){
+			leave_namespace();
+		}
+		else{
+			LOG_ERROR(JSON_ERROR_SYNTAX, "Error on comma in array");
+		}
 
-  object_phase_opt_key:
-    parser->phase = ParsePhase_ObjectOptKey;
-    n = parser_skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc == '}'){
-      leave_namespace();
-    }
+	object_phase_opt_key:
+		parser->phase = ParsePhase_ObjectOptKey;
+		n = parser_skip_ws(parser->loc, &parser->line);
+		move_loc((*parser), n, n);
+		if(*parser->loc == '}'){
+			leave_namespace();
+		}
 
-  object_phase_req_key:
-    parser->phase = ParsePhase_ObjectReqKey;
-    n = parser_skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    len = key_handler(parser);
-    move_loc((*parser), len+1, len+1); //TODO account for unicode chars
-    printf("Key: %.*s\n", 4, parser->loc);
+	object_phase_req_key:
+		parser->phase = ParsePhase_ObjectReqKey;
+		n = parser_skip_ws(parser->loc, &parser->line);
+		move_loc((*parser), n, n);
+		len = key_handler(parser);
+		assert(len);
+		move_loc((*parser), len+1, len+1); //TODO account for unicode chars
+		printf("Key: %.*s\n", 4, parser->loc);
 
-  object_phase_colon:
-    parser->phase = ParsePhase_ObjectEndKey;
-    n = parser_skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc != ':'){
-        LOG_ERROR(JSON_ERROR_SYNTAX, "Error on object colon");
-    }
-    move_loc((*parser), 1, 1);
+	object_phase_colon:
+		parser->phase = ParsePhase_ObjectEndKey;
+		n = parser_skip_ws(parser->loc, &parser->line);
+		move_loc((*parser), n, n);
+		if(*parser->loc != ':'){
+				LOG_ERROR(JSON_ERROR_SYNTAX, "Error on object colon");
+		}
+		move_loc((*parser), 1, 1);
 
-  object_phase_value:
-    parser->phase = ParsePhase_ObjectValue;
-    n = parser_skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
+	object_phase_value:
+		parser->phase = ParsePhase_ObjectValue;
+		n = parser_skip_ws(parser->loc, &parser->line);
+		move_loc((*parser), n, n);
 
-    type = validate_value(parser, 0);
-    switch(type){
-      case TYPE_OBJECT:
-      case TYPE_ARRAY:
-        break;
-      case 0:
-        //value error
-      default:
-        goto object_phase_comma;
-    }
-    parser->curkey = 0;
-    parser->current_namespace = parser->prevnode;
-    if(++parser->stack_idx == MAX_NAMESPACE_LEVEL){
-      return 0; 
-    }
-    parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
-    move_loc((*parser), 1, 1);
-    goto enter_namespace;
+		type = validate_value(parser, 0);
+		switch(type){
+			case TYPE_OBJECT:
+			case TYPE_ARRAY:
+				break;
+			case 0:
+				//value error
+			default:
+				goto object_phase_comma;
+		}
+		parser->curkey = 0;
+		parser->current_namespace = parser->prevnode;
+		if(++parser->stack_idx == MAX_NAMESPACE_LEVEL){
+			return 0; 
+		}
+		parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
+		move_loc((*parser), 1, 1);
+		goto enter_namespace;
 
-    parser->curkey = 0;
-    type = 0;
+		parser->curkey = 0;
+		type = 0;
 
-  object_phase_comma:
-    parser->phase = ParsePhase_ObjectEndValue;
-    n = parser_skip_ws(parser->loc, &parser->line);
-    move_loc((*parser), n, n);
-    if(*parser->loc == ','){
-      move_loc((*parser), 1, 1);
-      goto object_phase_req_key;
-    }
-    else
-    if(*parser->loc == '}'){
-      leave_namespace();
-    }
-    else {
-      LOG_ERROR(JSON_ERROR_SYNTAX, "Error on comma in object");
-    }
+	object_phase_comma:
+		parser->phase = ParsePhase_ObjectEndValue;
+		n = parser_skip_ws(parser->loc, &parser->line);
+		move_loc((*parser), n, n);
+		if(*parser->loc == ','){
+			move_loc((*parser), 1, 1);
+			goto object_phase_req_key;
+		}
+		else
+		if(*parser->loc == '}'){
+			leave_namespace();
+		}
+		else {
+			LOG_ERROR(JSON_ERROR_SYNTAX, "Error on comma in object");
+		}
 
-  error_cleanup:
-    printf("Error on line %u: %s (%d)\n",
-    parser->line, parser->errmsg, parser->errcode);
-    return 1;
+	error_cleanup:
+		printf("Error on line %u: %s (%d)\n",
+		parser->line, parser->errmsg, parser->errcode);
+		return 1;
  
-  exit_root_namespace:
-    parser->phase = 0;
-    return JszlE_None;
+	exit_root_namespace:
+		parser->phase = 0;
+		return JszlE_None;
 
 } //END ENGINE
 
 
-#include "query-engine.c"
+
+/********************************************************//**
+ * get_value_byidx
+ *
+ * @brief The purpose of this function is to skip the whitespace
+ * in a JSON document during the parsing phase 
+ *
+ * @param loc the 
+ * @return the number of characters to skip
+ *
+ ********************************************************/
+
+static struct jszlnode *get_value_byidx
+(struct jszlnode *value, unsigned idx)
+{
+	if(idx >= value->count) return 0; //err: Index too high
+	if( !(value = value->child) ) return 0; //err: no values
+	while(idx--){
+		assert(value);
+		value = value->next;
+	}
+	return value;
+}
+
+static struct jszlnode *get_value_byname(
+	struct jszlcontext *handle
+ ,struct jszlnode *value
+ ,unsigned long hash
+ ,unsigned len
+){
+	struct atom *atom = 0;
+	void * l_atomTable = g_AtomTable;
+	//hash = djb2(name, len);
+	atom = atom_find(l_atomTable, ATOM_TABLE_SIZE, hash, len);
+	assert(atom);
+	if(!atom) return 0;
+	for(value = value->child; value; value = value->next)
+		if(value->name == atom) break;
+	return value; 
+}
+
+
+
+// $ = absolute root
+// # = relative root
+int resolve_root(
+	struct jszlcontext *pctx
+ ,struct jszlnode **ppnode
+ ,const symbol
+){
+	if(!pctx || !ppnode || !symbol) return JSZLE_BAD_PARAM;
+	if(!pctx->RootNS) return JszlE_NoRoot;
+
+	switch(symbol){
+		case '$':
+			*ppnode = pctx->RootNS;
+			break;
+		case '#':
+			*ppnode = pctx->CurrentNS;
+			break;
+		default:
+			return JSZLE_BAD_PATH;
+	}
+
+	return JszlE_None; 
+}
+
+int get_node_byname(
+	struct jszlnode *pnode
+ ,struct jszlnode **ppnode
+ ,const char *name
+){
+	unsigned n;
+	unsigned long hash;
+	struct atom *atom = 0;
+	void * l_atomTable = g_AtomTable;
+
+	n = is_valid_key(name, global_seed, &hash);
+	if(!n)		return 0;
+	atom = atom_find(l_atomTable, ATOM_TABLE_SIZE, hash, n);
+	if(!atom) return 0;
+
+	for(pnode = pnode->child; pnode; pnode = pnode->next)
+		if(pnode->name == atom) break;
+	if(!pnode) return 0;
+	*ppnode = pnode;
+	return n;
+}
 
 
 
@@ -533,113 +658,113 @@ static unsigned jsizzle_parse_engine(
  ************************/
 
 int jsizzle_query_engine(
-  struct jszlnode *pnode
+	struct jszlnode *pnode
  ,const char *path
  ,struct jszlnode **ppnode)
 {
-  const char *loc;
-  unsigned n, type, subtype;
-  unsigned short idx;
+	const char *loc;
+	unsigned n, type, subtype;
+	unsigned short idx;
 
 
-  loc = path;
+	loc = path;
 
 begin_loop:
 
-  if(*loc == '\0'){
-    *ppnode =  pnode;
-    return JszlE_None;
-  }
-  else if(*loc == '['){ 
-    if(!IS_ARRAY((*pnode)) && !IS_OBJECT((*pnode)))
-    {
-      printf("Error: Must be structural node\n");
-      *ppnode = 0;
-      return JSON_ERROR_MUST_BE_ARRAY_OR_OBJECT;
-    }
-    loc++;
-    n = is_valid_number(loc, &type, &subtype);
-    idx = atouint(loc, n);
-    pnode = get_value_byidx(pnode, idx);
-    loc += n;
-    if(!pnode) return JszlE_KeyUndef;
-    if(*loc++ != ']'){
-      printf("Error: Syntax\n");	
-      *ppnode = 0;
-      return JSON_ERROR_SYNTAX;
-    }
-  }
-  else if(*loc == '.' || *loc == '/'){ //object
-    loc++;
-    if(!IS_OBJECT((*pnode))){
-      printf("Error: Must be an object\n");
-      *ppnode = 0;
-      return JSON_ERROR_TYPE_MISMATCH;
-    }
-    n = get_node_byname(pnode, &pnode, loc);
-    if(!n) return JszlE_KeyUndef;
-    loc += n;
-  }
-  else { //err
-  //should check if 'loc' is an object and a valid key name
-    if(IS_ARRAY( (*pnode) ) || IS_OBJECT((*pnode)))
-    {
-      printf("Error: No namespaces\n");
-      *ppnode = 0;
-      return JSON_ERROR_SYNTAX;
-    }
-  }
-  //do an atom find on the key
-  //ns = json_find_ns(node);
-  goto begin_loop;
+	if(*loc == '\0'){
+		*ppnode =	pnode;
+		return JszlE_None;
+	}
+	else if(*loc == '['){ 
+		if(!IS_ARRAY((*pnode)) && !IS_OBJECT((*pnode)))
+		{
+			printf("Error: Must be structural node\n");
+			*ppnode = 0;
+			return JSON_ERROR_MUST_BE_ARRAY_OR_OBJECT;
+		}
+		loc++;
+		n = is_valid_number(loc, &type, &subtype);
+		idx = atouint(loc, n);
+		pnode = get_value_byidx(pnode, idx);
+		loc += n;
+		if(!pnode) return JszlE_KeyUndef;
+		if(*loc++ != ']'){
+			printf("Error: Syntax\n");	
+			*ppnode = 0;
+			return JSON_ERROR_SYNTAX;
+		}
+	}
+	else if(*loc == '.' || *loc == '/'){ //object
+		loc++;
+		if(!IS_OBJECT((*pnode))){
+			printf("Error: Must be an object\n");
+			*ppnode = 0;
+			return JSON_ERROR_TYPE_MISMATCH;
+		}
+		n = get_node_byname(pnode, &pnode, loc);
+		if(!n) return JszlE_KeyUndef;
+		loc += n;
+	}
+	else { //err
+	//should check if 'loc' is an object and a valid key name
+		if(IS_ARRAY( (*pnode) ) || IS_OBJECT((*pnode)))
+		{
+			printf("Error: No namespaces\n");
+			*ppnode = 0;
+			return JSON_ERROR_SYNTAX;
+		}
+	}
+	//do an atom find on the key
+	//ns = json_find_ns(node);
+	goto begin_loop;
 }
 
 
 
 #define NODE_BY_IDX(pnode, idx)\
-    pnode = pnode->value;\
-    if(idx > (node).count) { printf("Error: Index too high\n"); }\
-    while(idx--) pnode = pnode->next;
+		pnode = pnode->value;\
+		if(idx > (node).count) { printf("Error: Index too high\n"); }\
+		while(idx--) pnode = pnode->next;
 
 
 static int copy_json_string(void *dest, void *src, unsigned int len)
 {
-char *_dest = dest, *_src = src;
-int count;
-int buf;
-    while(len--) {
-        if(*_src == '\\'){
-            count = get_escaped_char(++_src, &buf);
-            len -= count;
-            _src += count;
-            *_dest++ = buf;
-        }
-        else *_dest++ = *_src++;
-    }
-    return _dest - dest;
+	char *_dest = dest, *_src = src;
+	int count;
+	int buf;
+	while(len--) {
+		if(*_src == '\\'){
+			count = get_escaped_char(++_src, &buf);
+			len -= count;
+			_src += count;
+			*_dest++ = buf;
+		}
+		else *_dest++ = *_src++;
+	}
+	return _dest - dest;
 }
 
 
 //128
-//2048    0x7FF
-//65536   0xFFFF
+//2048		0x7FF
+//65536	 0xFFFF
 //2097152 0x1FFFFF
 
 
 void utf8_encode_char(unsigned long c)
 {
-    if(c < 128); //1 byte
-    else if(c < 2048); //2 byte
-    else if(c < 65536); //3 byte
+		if(c < 128); //1 byte
+		else if(c < 2048); //2 byte
+		else if(c < 65536); //3 byte
 }
 
 static int uft8_string(char *str, char *buf)
 {
-    unsigned int c;
-    c = (0xF0 | ((char)(c >> 18) & 0x07)); //0000 0111
-    c = (0x80 | ((char)(c >> 12) & 0x0F)); //0000 1111
-    c = (0xC0 | ((char)(c >> 6) & 0x1F)); //0001 1111 
-    c = (0x80 | (char)(c & 0x3F));         //0011 1111
+		unsigned int c;
+		c = (0xF0 | ((char)(c >> 18) & 0x07)); //0000 0111
+		c = (0x80 | ((char)(c >> 12) & 0x0F)); //0000 1111
+		c = (0xC0 | ((char)(c >> 6) & 0x1F)); //0001 1111 
+		c = (0x80 | (char)(c & 0x3F));				 //0011 1111
 }
 
 /*
@@ -657,10 +782,10 @@ ptr->error_line = __line__
 
 static void *get_context(jszlhandle_t handle)
 {
-    if(handle > g_max_handle){
-        return 0; 
-    }
-    return &g_thread[handle-1]; //decrement by 1
+		if(handle > g_max_handle){
+				return 0; 
+		}
+		return &g_thread[handle-1]; //decrement by 1
 }
 
 //0x80

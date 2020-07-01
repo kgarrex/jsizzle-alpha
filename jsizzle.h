@@ -8,6 +8,19 @@
 #define JSZLPUBL_H
 
 
+
+#if defined(_WIN32) || defined(_WIN64)
+  #define JSZLEXPORT __declspec(dllexport)
+
+#elif defined(__linux__) || defined(__GNUC__)
+  #define JSZLEXPORT __attribute__((visibility("default")))
+
+#else
+  #define JSZLEXPORT
+
+#endif
+
+
 #if defined(DEBUG) || defined(_DEBUG)
 
   #define JSZL_API_DEFINE(name, ...)\
@@ -27,16 +40,21 @@
 #endif
 
 
-#if defined(_WIN32) || defined(_WIN64)
-  #define JSZLEXPORT __declspec(dllexport)
+/*
+ * Function header for each function
+*/
 
-#elif defined(__linux__) || defined(__GNUC__)
-  #define JSZLEXPORT __attribute__((visibility("default")))
+/********************************************************//**
+ * function_name
+ *
+ * @brief This is the function description
+ *
+ * @param loc the 
+ * @return The description of the return value
+ *
+ ********************************************************/
 
-#else
-  #define JSZLEXPORT
 
-#endif
 
 
 
@@ -382,9 +400,9 @@ int JSZL_API_DEFINE(jszl_property,
  the count may not be larger than MAX_ITEM_COUNT(default: 4096) 
 */
 
-#define jszl_count_items(handle, path)\
-JSZL_API_CALL(jszl_count_items, handle, path)
-JSZLEXPORT int JSZL_API_DEFINE(jszl_count_items,
+#define jszl_count(handle, path)\
+JSZL_API_CALL(jszl_count, handle, path)
+JSZLEXPORT int JSZL_API_DEFINE(jszl_count,
   jszlhandle_t handle, const char *path
 );
 
@@ -442,9 +460,9 @@ JSZLEXPORT int JSZL_API_DEFINE(jszl_set_document_scope,
 ** Check to see if an object or array is set as the root
 ** '#' should always equal the current root
 */
-#define jszl_document_is_root(Handle, Path)\
-  JSZL_API_CALL(jszl_document_is_root, Handle, Path)
-JSZLEXPORT int JSZL_API_DEFINE(jszl_document_is_root,
+#define jszl_is_root(Handle, Path)\
+  JSZL_API_CALL(jszl_is_root, Handle, Path)
+JSZLEXPORT int JSZL_API_DEFINE(jszl_is_root,
   jszlhandle_t handle, const char *pathstr);
 
 
