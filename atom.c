@@ -13,10 +13,18 @@ struct atom *atom = 0;
     return atom;
 }
 
-/**
-** @desc Add an string to the atom table
-** This function is currently a bottleneck because of malloc
-*/
+
+
+/********************************************************//**
+ * atom_add 
+ *
+ * @brief Add a string to the atom table
+ *
+ * @param loc the 
+ * @return Returns a pointer to an atom struct
+ *
+ ********************************************************/
+
 static inline struct atom *atom_add(
   struct atom * atom_table[]
  ,unsigned atom_table_size

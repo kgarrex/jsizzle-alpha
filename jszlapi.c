@@ -162,7 +162,14 @@ void * new_parser()
 }
 
 
-//jszlParseLocalFile
+/********************************************************//**
+ * function_name
+ *
+ * @brief Parse a json file from the local file system
+ *
+ * @return Return a jszl return code
+ *
+ ********************************************************/
 
 int JSZL_API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path){
 	struct jszlfile fs = {0};
@@ -182,6 +189,7 @@ int JSZL_API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path
 	ctx->parser = new_parser();
 	ctx->parser->atom_pool = ctx->atom_pool;
 
+	//jszlpriv_open_file();
 	openFile(&fs, path);
 	json = mapFile(&fs);
 
