@@ -135,6 +135,7 @@ int test_read_empty_object()
     return 1;
 }
 
+
 int test_json()
 {
 
@@ -263,7 +264,6 @@ int main(int argc, char **argv)
   //__jszlGlobalInit("Hello", 3, "MyFunc", &vt, JSZLINIT_MULTITHREADED);
   handle = jszl_thread_init();
 
-  printf("Here\n");
   jszl_parse_local_file(handle, TEST_FILE);
 
 

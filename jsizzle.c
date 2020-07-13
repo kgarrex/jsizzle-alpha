@@ -416,7 +416,7 @@ static unsigned jsizzle_parse_engine(
 		parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;
 	}
 	else {
-			LOG_ERROR(JSON_ERROR_TYPE_MISMATCH, 0);	
+		LOG_ERROR(JSON_ERROR_TYPE_MISMATCH, 0);	
 	}
 	parser->root_namespace = parser->current_namespace;
 	ctx->CurrentNS = parser->root_namespace;
