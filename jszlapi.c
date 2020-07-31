@@ -1,49 +1,4 @@
 
-
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define WORD_TO_BINARY_PATTERN BYTE_TO_BINARY_PATTERN " " BYTE_TO_BINARY_PATTERN
-#define DWORD_TO_BINARY_PATTERN WORD_TO_BINARY_PATTERN " " WORD_TO_BINARY_PATTERN
-
-#define BYTE_TO_BINARY(byte)\
-	(byte & 0x80 ? '1' : '0'),\
-	(byte & 0x40 ? '1' : '0'),\
-	(byte & 0x20 ? '1' : '0'),\
-	(byte & 0x10 ? '1' : '0'),\
-	(byte & 0x08 ? '1' : '0'),\
-	(byte & 0x04 ? '1' : '0'),\
-	(byte & 0x02 ? '1' : '0'),\
-	(byte & 0x01 ? '1' : '0')
-
-#define WORD_TO_BINARY(word)\
-	(word & 0x8000 ? '1' : '0'),\
-	(word & 0x4000 ? '1' : '0'),\
-	(word & 0x2000 ? '1' : '0'),\
-	(word & 0x1000 ? '1' : '0'),\
-	(word & 0x0800 ? '1' : '0'),\
-	(word & 0x0400 ? '1' : '0'),\
-	(word & 0x0200 ? '1' : '0'),\
-	(word & 0x0100 ? '1' : '0'),\
-	BYTE_TO_BINARY(word)
-
-#define DWORD_TO_BINARY(dword)\
-	(dword & 0x80000000 ? '1' : '0'),\
-	(dword & 0x40000000 ? '1' : '0'),\
-	(dword & 0x20000000 ? '1' : '0'),\
-	(dword & 0x10000000 ? '1' : '0'),\
-	(dword & 0x08000000 ? '1' : '0'),\
-	(dword & 0x04000000 ? '1' : '0'),\
-	(dword & 0x02000000 ? '1' : '0'),\
-	(dword & 0x01000000 ? '1' : '0'),\
-	(dword & 0x00800000 ? '1' : '0'),\
-	(dword & 0x00400000 ? '1' : '0'),\
-	(dword & 0x00200000 ? '1' : '0'),\
-	(dword & 0x00100000 ? '1' : '0'),\
-	(dword & 0x00080000 ? '1' : '0'),\
-	(dword & 0x00040000 ? '1' : '0'),\
-	(dword & 0x00020000 ? '1' : '0'),\
-	(dword & 0x00010000 ? '1' : '0'),\
-	WORD_TO_BINARY(dword)
-
 /*
 ** PUBLIC INTERFACES
 **
