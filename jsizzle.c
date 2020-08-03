@@ -7,8 +7,147 @@
 #include <ctype.h>
 
 #include "jsizzle.h"
-#include "jszlpriv.h"
 
+
+/*
+** The size of the atom table array stored in the json object
+** The atom table is an array of pointers to atom structures
+** This value should be a prime number to reduce collisions and its best to
+** use a prime number that is closest to (but less than) a power of 2
+*/
+#ifndef ATOM_TABLE_SIZE
+#define ATOM_TABLE_SIZE     127 
+#endif
+
+
+/* 
+** The max number of namespaces (arrays/objects) that can be nested
+** inside of a namespace. This is the size of a array in the json object
+*/
+#ifndef MAX_NAMESPACE_LEVEL
+#define MAX_NAMESPACE_LEVEL 16 
+#endif
+#if MAX_NAMESPACE_LEVEL > 256
+#error Error: Must define MAX_NAMESPACE_LEVEL between 0 - 256
+#endif
+
+
+/*
+** The max length enforced for object keys. NOT IMPLEMENTED
+*/
+#ifndef JSZL_MAX_KEY_LENGTH
+#define JSZL_MAX_KEY_LENGTH    31 
+#endif
+
+
+/*
+** The max length enforced for string values. NOT IMPLEMENTED
+*/
+#ifndef MAX_STRING_LENGTH
+#define MAX_STRING_LENGTH   4096 
+#endif
+
+
+#ifndef MAX_VALUE_LIMIT
+#define MAX_VALUE_LIMIT     65536
+#endif
+
+
+/*
+** max number of errors to accumulate in a buffer. NOT IMPLEMENTED
+*/
+#ifndef ERROR_STACK_SIZE
+#define ERROR_STACK_SIZE    16
+#endif
+
+
+
+/*
+** The maximum number of documents that can be parsed and stored
+** per thread context. This value sets a static field
+*/
+#ifndef MAX_CONCURRENT_DOCUMENTS_PER_THREAD
+#define MAX_CONCURRENT_DOCUMENTS_PER_THREAD 2
+#endif
+#if MAX_CONCURRENT_DOCUMENTS_PER_THREAD > 16
+#error *** Max concurrent documents cannot exceed 16 per thread ***
+#endif
+
+
+#ifndef HASH_VALUE_BIT_SIZE
+#define HASH_VALUE_BIT_SIZE 32
+#endif
+
+
+#define MAX_ITEM_COUNT 4096 
+
+
+#define tolower(c) ((char)(c > 96 && c < 123 ? c - 32 : c))
+#define toupper(c) ((char)(c > 64 && c < 91 ? c + 32 : c))
+
+#define isipv6digit(d) (isdigit(d) || (d >= 'a' && d <= 'f'))
+
+#define JSZL_STRICT_KEYS 0x01
+
+static const union {unsigned char b[4]; uint32_t v;} __host_order__ = {{0,1,2,3}};
+
+/*****
+ * 
+ */
+enum ParsePhase {
+  ParsePhase_None,
+  ParsePhase_ArrayOptValue,
+  ParsePhase_ArrayReqValue,
+  ParsePhase_ArrayEndValue,
+  ParsePhase_ObjectOptKey,
+  ParsePhase_ObjectReqKey,
+  ParsePhase_ObjectEndKey,
+  ParsePhase_ObjectValue,
+  ParsePhase_ObjectEndValue
+};
+
+
+typedef int (*jszl_string_handler)(struct jszlparser *);
+typedef int (*jszl_key_handler)(struct jszlparser *);
+
+
+
+/*****************************
+ * jsizzle_parse_engine
+ *
+ * @param[in] parser
+ * @param[in] ctx  t
+ *
+ *
+ * @return  the error code
+ *
+ ****************************/
+
+int jsizzle_parser_engine(
+  struct jszlparser *parser,
+  struct jszlcontext *ctx,
+  const char *str,
+  jszl_string_handler string_handler
+);
+
+
+/**************************//*
+ * jsizzle_query_engine
+ *
+ * @param[in] pnode JSON used to search in
+ * @param[in]
+ * @param[out] ppnode returns a JSON node that was found. NULL if not found
+ *
+ * @return the error code
+ *
+ ************************/
+
+int jsizzle_query_engine(
+  struct jszlnode *pnode,
+  const char *path,
+  struct jszlnode **ppnode
+);
+ 
 
 
 #define UTF8_CHAR_LEN(byte) (((0xE5000000 >> ((byte >> 3) & 0x1E)) & 3) +1)
@@ -70,7 +209,6 @@ struct atom {
 	unsigned short refcount;
 	unsigned length;
 };
-
 
 
 /* Global Atom Table
@@ -145,6 +283,8 @@ struct jszlparser {
 	struct atom *atom_pool;
 	unsigned int atom_pool_size;
 	unsigned int atom_idx;
+
+	int flags;
 
 	int errcode;
 	const char *errmsg;
@@ -263,7 +403,214 @@ typedef void (*key_handler_cb)(
 #include "utf8.c"
 
 
-#include "parse-engine.c"
+#define ERRORLOG_PROC (parser->log_error)
+
+#define ERRORMSG_INVALID_PRIMITIVE "Invalid primitive value" 
+
+
+void * allocmem(int size)
+{
+	return 0;
+}
+
+void deallocmem(void *mem)
+{}
+
+//typedef unsigned int dword;
+static inline void *
+new_node(long value, long atom, short type, short count)
+{
+	struct jszlnode * pnode;
+	pnode = malloc(sizeof(struct jszlnode));
+	if(!pnode) return 0;
+
+	pnode->value	= value;
+	pnode->name	 = (void*)atom;
+	pnode->type	 = type;
+	pnode->count	= count;
+	pnode->next	 = 0;
+	return pnode;
+}
+
+static inline void
+delete_node(void *node)
+{}
+
+
+/*
+** Macro to create a new root namespace and set it as the 
+** current namespace. Push the new namespace onto the namespace stack
+*/
+
+
+/*
+** Macro to create a new namespace and initialize. The current
+** namespace now references the previous namespace. The namespace
+** is pushed onto the stack an execution reenters the loop
+*/
+
+
+
+//goes to cleanup after 1 error
+#define LOG_ERROR(e, msg)\
+do{\
+if(ERRORLOG_PROC && !ERRORLOG_PROC(e, msg, parser->line, 0)) { goto error_cleanup; }\
+parser->errcode = e; parser->errmsg = msg;\
+goto error_cleanup;\
+}while(0);
+
+
+static long key_exists(struct jszlnode *value, struct atom *key)
+{
+	for(value = value->child; value; value = value->next)
+		if(value->name == key) return 1;	 
+	return 0;
+}
+
+struct value_data {
+	int type;
+	unsigned length;
+	unsigned isNegative;
+	unsigned numType;
+	unsigned long hash;
+};
+
+
+/* Macro to advance the current location of the parser
+** This moves the pointer forward by 'byte_count' bytes and increments 
+** the offset by 'char_count' to keep track of where errors occur in a line 
+*/
+#define move_loc(p, byte_count, char_count) p.loc += byte_count; p.offset += char_count
+
+
+/*
+** validation function for a JSON value
+*/
+static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handler str_handler
+){
+	struct jszlnode *pnode;
+	unsigned length = 0;
+	unsigned type = 0;
+	long value = 0;
+	int n;
+	int numType;
+	int isNegative;
+	int errcode;
+
+	switch(*parser->loc){
+		case '"':
+			length = string_handler(parser);
+
+			if(!length){
+				parser->errcode = JSZLE_SYNTAX;
+				goto error_cleanup;
+			}
+			type = TYPE_STRING;
+			value = (long)parser->loc+1;
+			move_loc((*parser), length, length);
+			break;
+
+		case '[':
+			type = TYPE_ARRAY;
+			break;
+
+		case '{':
+			type = TYPE_OBJECT;
+			break;
+
+		case 'f':
+			if(memcmp(parser->loc, "false", 5)){
+				printf("ERROR ON FALSE\n");
+				parser->errcode = JSZLE_SYNTAX;
+				goto error_cleanup;
+			}
+			type = TYPE_BOOLEAN;
+			move_loc((*parser), 5, 5);
+			break;
+
+		case 't':
+			if(memcmp(parser->loc+1, "true", 4)){
+				parser->errcode = JSZLE_SYNTAX;
+				goto error_cleanup;
+			}
+			type	= TYPE_BOOLEAN;
+			value = 1;
+			move_loc((*parser), 4, 4);
+			break;
+
+		case 'n':
+			if(memcmp(parser->loc+1, "null", 4)){
+				parser->errcode = JSZLE_SYNTAX;
+				goto error_cleanup;
+			}
+			type = TYPE_NULL;
+			move_loc((*parser), 4, 4);
+			break;
+
+		default:
+		if(isdigit(*parser->loc) || *parser->loc == '-'){
+			length = is_valid_number(parser->loc, &numType, &isNegative);
+			if(length){
+				if(numType == _NumberTypeHex){
+					value = hextoint(parser->loc+2, length-2);
+				}
+				else if(numType == _NumberTypeDecimal){
+					value = atouint(parser->loc, length);
+				}
+				type = TYPE_NUMBER;
+				move_loc((*parser), length, length);
+				break;
+			}
+		}
+		parser->errcode = JSZLE_INVALID_VALUE;
+		goto error_cleanup;
+	}
+
+
+	pnode = new_node(value, (long)parser->curkey, type, length);
+	if(!pnode){
+		parser->errcode = JszlE_NoMemory;
+		goto error_cleanup; 
+	}
+	if(!parser->current_namespace->child){
+		parser->current_namespace->child = pnode; 
+		parser->current_namespace->count++;
+	}
+	else{
+		parser->prevnode->next = pnode; 
+		parser->current_namespace->count++;
+	}
+	parser->prevnode = pnode;
+	return pnode->type;
+
+error_cleanup:
+	//log error: invalid value
+	return 0;
+}
+
+
+/* leave_namespace()
+** This macro is used to remove some code duplication in the main parser engine.
+** It checks to see if we are leaving the root namespace, if not, we replace the
+** previous node with the current object/array (to link the next value). Next we
+** decrement the namespace stack and advance the location pointer.
+*/
+#define leave_namespace()\
+if(parser->current_namespace == parser->root_namespace)\
+		goto exit_root_namespace;\
+parser->prevnode = parser->current_namespace;\
+parser->current_namespace = parser->ns_stack[--parser->stack_idx].namespace;\
+move_loc((*parser), 1, 1);\
+if(GET_VALUE_TYPE((*parser->current_namespace)) == TYPE_ARRAY)\
+		goto array_phase_comma;\
+else\
+		goto object_phase_comma;\
+
+
+void parse_error(struct jszlparser *p, int err)
+{
+		
+}
 
 
 
@@ -271,7 +618,8 @@ typedef void (*key_handler_cb)(
  * key_handler
  * @brief Handle a JSON object key
  *
- * @return the size of the key in bytes
+ * @return the size of the key in bytes. On error, the key handler should
+ * return 0 and should set the error code.
  *
  ************************************************/
 
@@ -282,25 +630,40 @@ static int key_handler(struct jszlparser *parser)
 	struct atom *atom;
 
 	if(*parser->loc != '"'){
+		//set_error();
 		return 0;
 	}
 
 	len = is_valid_key(parser->loc+1, global_seed, &hash);
-	if(parser->loc[len+1] != '"') return 0; //len+1 cause ptr starts at start quotes
+	if(!len){
+		parse_error(parser, JszlE_BadKey);
+		return 0;
+	}
+	if(parser->loc[len+1] != '"'){
+		parse_error(parser, JszlE_BadKey);
+		return 0; //len+1 cause ptr starts at start quotes
+	}
 
 	if(len > JSZL_MAX_KEY_LENGTH){
 		printf("Error: Key too long\n");
+		parse_error(parser, JszlE_KeyLength);
+		return 0;
 	}
 
 	//atom = &parser->atom_pool[parser->atom_pool_idx++];
 	atom = malloc(sizeof(struct atom));
 	parser->curkey = atom_add(g_atomTable, ATOM_TABLE_SIZE, atom, hash, len, parser->loc);
-	if(!parser->curkey) return 0;
-	if(key_exists(parser->current_namespace, parser->curkey)){
-		return JszlE_DupKey; 
+	if(!parser->curkey){
+		printf("Error: No atom\n");
+		return 0;
 	}
-	return len+1;
+	if(key_exists(parser->current_namespace, parser->curkey)){
+		parse_error(parser, JszlE_DupKey);
+		return 0;
+	}
+	return len;
 }
+
 
 
 /********************************************************//**
@@ -432,7 +795,7 @@ static unsigned jsizzle_parse_engine(
 		n = parser_skip_ws(parser->loc, &parser->line);
 		move_loc((*parser), n, n);
 		if(*parser->loc == ']'){
-				leave_namespace();
+			leave_namespace();
 		}
 
 	array_phase_req_value:
@@ -442,6 +805,7 @@ static unsigned jsizzle_parse_engine(
 		type = validate_value(parser, 0);
 		switch(type){
 			case TYPE_OBJECT:
+				break;
 			case TYPE_ARRAY:
 				break;
 			case 0:
@@ -487,15 +851,14 @@ static unsigned jsizzle_parse_engine(
 		move_loc((*parser), n, n);
 		len = key_handler(parser);
 		assert(len);
-		move_loc((*parser), len+1, len+1); //TODO account for unicode chars
-		printf("Key: %.*s\n", 4, parser->loc);
+		move_loc((*parser), len+2, len+2); // +2 to skip quotes TODO account for unicode chars
 
 	object_phase_colon:
 		parser->phase = ParsePhase_ObjectEndKey;
 		n = parser_skip_ws(parser->loc, &parser->line);
 		move_loc((*parser), n, n);
 		if(*parser->loc != ':'){
-				LOG_ERROR(JSON_ERROR_SYNTAX, "Error on object colon");
+			LOG_ERROR(JSON_ERROR_SYNTAX, "Error on object colon");
 		}
 		move_loc((*parser), 1, 1);
 
@@ -507,6 +870,7 @@ static unsigned jsizzle_parse_engine(
 		type = validate_value(parser, 0);
 		switch(type){
 			case TYPE_OBJECT:
+				break;
 			case TYPE_ARRAY:
 				break;
 			case 0:
@@ -517,6 +881,7 @@ static unsigned jsizzle_parse_engine(
 		parser->curkey = 0;
 		parser->current_namespace = parser->prevnode;
 		if(++parser->stack_idx == MAX_NAMESPACE_LEVEL){
+			printf("Error: Exceeded max namespace level\n");
 			return 0; 
 		}
 		parser->ns_stack[parser->stack_idx].namespace = parser->current_namespace;

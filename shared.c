@@ -364,6 +364,7 @@ char flags = 0;
     }
     else return 0;
 
+
     return str - start;
 }
 

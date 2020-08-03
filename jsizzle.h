@@ -138,8 +138,10 @@ enum JszlE {
  ,JSON_ERROR_TYPE_MISMATCH //need to clean up instances of this error
  ,JszlE_TypeMismatch
  ,JSON_ERROR_SCHEMA_ERROR
+ ,JszlE_BadKey
  ,JszlE_DupKey
  ,JszlE_KeyUndef
+ ,JszlE_KeyLength
  ,JSZLERR_NO_FILE_EXISTS
  ,JSZLE_NO_FILE
  ,JSON_ERROR_OUT_OF_RANGE
