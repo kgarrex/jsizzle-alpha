@@ -113,7 +113,7 @@ typedef int (*jszl_key_handler)(struct jszlparser *);
 
 
 /*****************************
- * jsizzle_parse_engine
+ * parse_engine
  *
  * @param[in] parser
  * @param[in] ctx  t
@@ -132,7 +132,7 @@ int jsizzle_parser_engine(
 
 
 /**************************//*
- * jsizzle_query_engine
+ * query_engine
  *
  * @param[in] pnode JSON used to search in
  * @param[in]
@@ -142,7 +142,7 @@ int jsizzle_parser_engine(
  *
  ************************/
 
-int jsizzle_query_engine(
+int query_engine(
   struct jszlnode *pnode,
   const char *path,
   struct jszlnode **ppnode
@@ -710,7 +710,7 @@ static unsigned inline parser_skip_ws(const char *loc, unsigned *line)
 
 
 /******************************//**
- * jsizzle_parse_engine
+ * parse_engine
  *
  * @brief Parse a JSON string
  *
@@ -722,7 +722,7 @@ static unsigned inline parser_skip_ws(const char *loc, unsigned *line)
  *
  ********************************/
 
-static unsigned jsizzle_parse_engine(
+static unsigned parse_engine(
 	struct jszlparser *parser,
 	struct jszlcontext *ctx,
 	const char *str,
@@ -748,13 +748,13 @@ static unsigned jsizzle_parse_engine(
 		current_namespace = parser->ns_stack[parser->stack_idx].namespace;
 
 		switch(parser->phase){
-			case ParsePhase_ArrayOptValue	: goto array_phase_opt_value;
-			case ParsePhase_ArrayReqValue	: goto array_phase_req_value;
-			case ParsePhase_ArrayEndValue	: goto array_phase_comma;
-			case ParsePhase_ObjectOptKey	 : goto object_phase_opt_key;
-			case ParsePhase_ObjectReqKey	 : goto object_phase_req_key;
-			case ParsePhase_ObjectEndKey	 : goto object_phase_colon;
-			case ParsePhase_ObjectValue		: goto object_phase_value;
+			case ParsePhase_ArrayOptValue  : goto array_phase_opt_value;
+			case ParsePhase_ArrayReqValue  : goto array_phase_req_value;
+			case ParsePhase_ArrayEndValue  : goto array_phase_comma;
+			case ParsePhase_ObjectOptKey   : goto object_phase_opt_key;
+			case ParsePhase_ObjectReqKey   : goto object_phase_req_key;
+			case ParsePhase_ObjectEndKey   : goto object_phase_colon;
+			case ParsePhase_ObjectValue	   : goto object_phase_value;
 			case ParsePhase_ObjectEndValue : goto object_phase_comma;
 		}
 	}
@@ -787,7 +787,7 @@ static unsigned jsizzle_parse_engine(
 
 	enter_namespace:
 		if(GET_VALUE_TYPE((*parser->current_namespace)) == TYPE_OBJECT){
-				goto object_phase_opt_key;
+			goto object_phase_opt_key;
 		}
 
 	array_phase_opt_value:
@@ -962,29 +962,39 @@ static struct jszlnode *get_value_byname(
 
 
 
-// $ = absolute root
-// # = relative root
-int resolve_root(
+/******************************
+ * resolve_root
+ *
+ * @brief get the first character of a JSON path and resolve
+ * the root node
+ *
+ * @param pctx point to the jsizzle context struct
+ * @param ppnode a pointer to a node object that holds the returned node
+ * @param symbol the root character of the json path
+ *
+ *
+ * $ = absolute root
+ * # = relative root
+ *
+ *******************************/
+
+static int resolve_root(
 	struct jszlcontext *pctx
- ,struct jszlnode **ppnode
- ,const symbol
+	,struct jszlnode **ppnode
+	,const symbol
 ){
-	if(!pctx || !ppnode || !symbol) return JSZLE_BAD_PARAM;
+	*ppnode = 0;
+	if(!pctx || !ppnode || !symbol) return JszlE_BadParam;
 	if(!pctx->RootNS) return JszlE_NoRoot;
 
-	switch(symbol){
-		case '$':
-			*ppnode = pctx->RootNS;
-			break;
-		case '#':
-			*ppnode = pctx->CurrentNS;
-			break;
-		default:
-			return JSZLE_BAD_PATH;
-	}
+	if(symbol == '$') *ppnode = pctx->RootNS;
+	else if(symbol == '#') *ppnode = pctx->CurrentNS;
+	else return JszlE_BadPath;
 
 	return JszlE_None; 
 }
+
+
 
 int get_node_byname(
 	struct jszlnode *pnode
@@ -1011,7 +1021,7 @@ int get_node_byname(
 
 
 /**************************//*
- * jsizzle_query_engine
+ * query_engine
  * @brief Query through JSON nodes to find a node
  *
  * @param[in] pnode JSON used to search in
@@ -1022,10 +1032,8 @@ int get_node_byname(
  *
  ************************/
 
-int jsizzle_query_engine(
-	struct jszlnode *pnode
- ,const char *path
- ,struct jszlnode **ppnode)
+static int query_engine(struct jszlnode *pnode,
+	const char *path, struct jszlnode **ppnode)
 {
 	const char *loc;
 	unsigned n, type, subtype;
@@ -1037,7 +1045,7 @@ int jsizzle_query_engine(
 begin_loop:
 
 	if(*loc == '\0'){
-		*ppnode =	pnode;
+		*ppnode = pnode;
 		return JszlE_None;
 	}
 	else if(*loc == '['){ 
@@ -1314,7 +1322,7 @@ int JSZL_API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path
 
 
 	//invoke the parsing engine on the mapped pointer
-	rslt = jsizzle_parse_engine(&parser, ctx, json, string_handler);
+	rslt = parse_engine(&parser, ctx, json, string_handler);
 	if(rslt != JszlE_None){
 		printf("Error(%u): Failed to parse JSON file\n", rslt); 
 		return 0;
@@ -1351,7 +1359,7 @@ struct jszlparser parser;
 	openFile(&file, filename);
 	//new_parser(
 	//set_parser_key_handler(&parser, key_handler);
-	err = jsizzle_parse_engine(&parser, pctx, filename, string_handler);
+	err = parse_engine(&parser, pctx, filename, string_handler);
 
 	//delete_parser(
 
@@ -1363,7 +1371,7 @@ int JSZL_API_DEFINE(json_read,
  struct jszlparser *pstate, struct jszlcontext *handle, const char *str
 ){
 	int rslt;
-	rslt = jsizzle_parse_engine(pstate, handle, str, string_handler);
+	rslt = parse_engine(pstate, handle, str, string_handler);
 	if(rslt != JszlE_None) return rslt;
 	return JszlE_None;
 }
@@ -1392,7 +1400,7 @@ jszlopresult JSZL_API_DEFINE(jszl_set_document_scope,
 
 	//search the node tree and set the node returned
 	resolve_root(pctx, &pnode, *path+1);
-	if(JszlE_None != jsizzle_query_engine(pnode, path+1, &pnode)){
+	if(JszlE_None != query_engine(pnode, path+1, &pnode)){
 		return 0;
 	}
 
@@ -1433,7 +1441,7 @@ int JSZL_API_DEFINE(jszl_is_root,
 	}
 
 	resolve_root(pctx, &pnode, *path);
-	if(JszlE_None != jsizzle_query_engine(pnode, path+1, &pnode)){
+	if(JszlE_None != query_engine(pnode, path+1, &pnode)){
 		return 0; 
 	}
 
@@ -1489,7 +1497,7 @@ int JSZL_API_DEFINE(jszlIterate,
 	pctx = get_context(handle);
 
 	resolve_root(pctx, &pnode, *path);
-	jsizzle_query_engine(pnode, path+1, &pnode);
+	query_engine(pnode, path+1, &pnode);
 
 	if(GET_VALUE_TYPE((*pnode)) != TYPE_ARRAY) return JszlE_TypeMismatch;
 
@@ -1530,12 +1538,12 @@ int JSZL_API_DEFINE(jszl_deserialize_object,
 
 	char *field;
 
-	if(!handle || !path || !count || !table || !buffer) return JSZLE_BAD_PARAM;
+	if(!handle || !path || !count || !table || !buffer) return JszlE_BadParam;
 
 	pctx = get_context(handle);
 
 	resolve_root(pctx, &rootnode, *path);
-	msg = jsizzle_query_engine(rootnode, path+1, &rootnode);
+	msg = query_engine(rootnode, path+1, &rootnode);
 	if(msg != JszlE_None) return msg;
 	if(GET_VALUE_TYPE((*rootnode)) != TYPE_OBJECT) return JszlE_TypeMismatch;
 
@@ -1631,14 +1639,21 @@ int JSZL_API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg)
 int JSZL_API_DEFINE(jszl_count,
  jszlhandle_t handle, const char *path)
 {
-	int msg;
+	int err;
 	struct jszlnode *pnode;
 	struct jszlcontext *pctx;
 
 	pctx = get_context(handle);
-	resolve_root(pctx, &pnode, *path);
-	msg = jsizzle_query_engine(pnode, path+1, &pnode);
-	if(msg != JszlE_None) return -1;
+	err = resolve_root(pctx, &pnode, *path);
+	if(err != JszlE_None){
+		printf("Error: could not resolve JSON root path\n");	
+		return -1;
+	}
+	err = query_engine(pnode, path+1, &pnode);
+	if(err != JszlE_None){
+		printf("Error: Could not query node\n");
+		return -1;
+	}
 	if( GET_VALUE_TYPE((*pnode)) != TYPE_ARRAY) return JszlE_TypeMismatch; 
 	return pnode->count;
 }

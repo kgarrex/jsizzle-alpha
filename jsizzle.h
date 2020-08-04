@@ -146,7 +146,7 @@ enum JszlE {
  ,JSZLE_NO_FILE
  ,JSON_ERROR_OUT_OF_RANGE
  ,JSON_ERROR_CONTINUE     //fatal
- ,JSZLE_BAD_PARAM
+ ,JszlE_BadParam
  ,JSON_ERROR_INVALID_STRING
  ,JSON_ERROR_INVALID_NUMBER
  ,JszlE_NoMemory //fatal
@@ -154,7 +154,7 @@ enum JszlE {
  ,JSON_ERROR_MAX_NESTED_NAMESPACES
  ,JszlE_NoRoot
  ,JSZLE_NOT_EQUAL
- ,JSZLE_BAD_PATH
+ ,JszlE_BadPath
  ,JszlE_BadHandle
  ,JSZLE_BAD_ERRCODE
  ,MAX_JSZLERR
@@ -596,5 +596,6 @@ int _json_foreach(
 
 
 //#undef JSZLDBG_DEF_WITH_PARAMS
+
 
 #endif

@@ -263,15 +263,15 @@ int main(int argc, char **argv)
 
 	jszl_parse_local_file(handle, TEST_FILE);
 
-
-
 	jszl_property(handle, JszlProp_Encoding, JszlEncode_Utf8);
 	jszl_property(handle, JszlProp_ReadBuf, buf, 256); 
 
 
+	/*
 	if(jszl_set_document_scope(handle, "#.Object1")){
 		printf("Error: could not set scope 1\n");
 	}
+	*/
 
 
 	if(!jszl_is_root(handle, "#")){
