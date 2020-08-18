@@ -9,6 +9,26 @@
 #include "jsizzle.h"
 
 
+#if defined(DEBUG) || defined(_DEBUG)
+
+  #define API_DEFINE(name, ...)\
+  _##name(const char *_file, unsigned int _line, const char *_func, __VA_ARGS__)
+
+  #define API_CALL(name, ...)\
+  _##name(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
+
+
+  #define DEBUG_OUT()\
+  printf("Error in file '%s' on line '%u' in function '%s'\n", _file, _line, _func)
+
+#else
+  #define API_DEFINE(name, ...) _##name(__VA_ARGS__)
+  #define API_CALL(name, ...) _##name(__VA_ARGS__)
+  #define DEBUG_OUT()
+#endif
+
+
+
 /*
 ** The size of the atom table array stored in the json object
 ** The atom table is an array of pointers to atom structures
@@ -210,6 +230,11 @@ struct atom {
 	unsigned length;
 };
 
+struct jszl_header {
+	long atom_table;
+	short atom_table_size;
+};
+
 
 /* Global Atom Table
 **
@@ -323,7 +348,7 @@ struct jszlparser {
 };
 
 const char *g_errmsg[MAX_JSZLERR] = {
-	"The document root is missing"
+	"The document root is missing",
 };
 
 #include "..\core.h"
@@ -483,9 +508,12 @@ struct value_data {
 #define move_loc(p, byte_count, char_count) p.loc += byte_count; p.offset += char_count
 
 
-/*
-** validation function for a JSON value
-*/
+/**************************************************//**
+ * jszlparse_validate_value
+ *
+ * validation function for a JSON value
+ *
+ **************************************************/
 static enum jszltype validate_value(struct jszlparser *parser, jszl_string_handler str_handler
 ){
 	struct jszlnode *pnode;
@@ -754,7 +782,7 @@ static unsigned parse_engine(
 			case ParsePhase_ObjectOptKey   : goto object_phase_opt_key;
 			case ParsePhase_ObjectReqKey   : goto object_phase_req_key;
 			case ParsePhase_ObjectEndKey   : goto object_phase_colon;
-			case ParsePhase_ObjectValue	   : goto object_phase_value;
+			case ParsePhase_ObjectValue    : goto object_phase_value;
 			case ParsePhase_ObjectEndValue : goto object_phase_comma;
 		}
 	}
@@ -1181,7 +1209,7 @@ void utf8()
 ** checks membind to see if the global environment has already been
 ** initialized
 */
-void JSZL_API_DEFINE(jszl_init,
+void API_DEFINE(jszl_init,
 	struct jszlvtable *vt,
 	unsigned long options)
 {
@@ -1197,7 +1225,7 @@ void JSZL_API_DEFINE(jszl_init,
 }
 
 
-int JSZL_API_DEFINE(jszl_property,
+int API_DEFINE(jszl_property,
 	jszlhandle_t handle,
 	enum JszlProp prop, ...)
 {
@@ -1237,7 +1265,7 @@ int JSZL_API_DEFINE(jszl_property,
 /*
 ** jszl_thread_init
 */
-jszlhandle_t JSZL_API_DEFINE(jszl_thread_init)
+jszlhandle_t API_DEFINE(jszl_thread_init)
 {
 	if(!g_vtable.memalloc) return 0; //failure to init global
 
@@ -1259,7 +1287,7 @@ jszlhandle_t JSZL_API_DEFINE(jszl_thread_init)
 
 
 //jszlParseString
-int JSZL_API_DEFINE(jszlParseString, jszlhandle_t handle, const char *json){
+int API_DEFINE(jszlParseString, jszlhandle_t handle, const char *json){
 	return JszlE_None;
 }
 
@@ -1298,7 +1326,7 @@ void * new_parser()
  *
  ********************************************************/
 
-int JSZL_API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path){
+int API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path){
 	struct jszlfile fs = {0};
 	//struct jszlfile *pfs = &fs;
 	const char *json;
@@ -1343,7 +1371,7 @@ int JSZL_API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path
 
 //jszl_load
 
-int JSZL_API_DEFINE(jszl_load, jszlhandle_t handle, const char *filename)
+int API_DEFINE(jszl_load, jszlhandle_t handle, const char *filename)
 {
 
 struct jszlfile file;
@@ -1367,7 +1395,7 @@ struct jszlparser parser;
 }
 
 
-int JSZL_API_DEFINE(json_read,
+int API_DEFINE(json_read,
  struct jszlparser *pstate, struct jszlcontext *handle, const char *str
 ){
 	int rslt;
@@ -1381,7 +1409,7 @@ int JSZL_API_DEFINE(json_read,
 * @param handle handle to a JSizzle context
 * @param path JSON path to a valid object or array
 */
-jszlopresult JSZL_API_DEFINE(jszl_set_document_scope,
+jszlopresult API_DEFINE(jszl_set_document_scope,
  jszlhandle_t handle, const char *path
 ){
 	struct jszlcontext *pctx;
@@ -1424,7 +1452,7 @@ jszlopresult JSZL_API_DEFINE(jszl_set_document_scope,
  *
  ********************************************************/
 
-int JSZL_API_DEFINE(jszl_is_root,
+int API_DEFINE(jszl_is_root,
  jszlhandle_t handle, const char *path
 ){
 	struct jszlcontext *pctx;
@@ -1454,7 +1482,7 @@ int JSZL_API_DEFINE(jszl_is_root,
 /*
 ** Set the user context pointer to be passed to the user defined virtual table
 */
-int JSZL_API_DEFINE(jszlSetUserContext,
+int API_DEFINE(jszlSetUserContext,
  jszlhandle_t handle, void *userctx
 ){
 	struct jszlcontext *ctx;
@@ -1466,7 +1494,7 @@ int JSZL_API_DEFINE(jszlSetUserContext,
 }
 
 
-int JSZL_API_DEFINE(jszl_geterror,
+int API_DEFINE(jszl_geterror,
  jszlhandle_t handle, const char **errmsg
 ){
 	struct jszlcontext *ctx;
@@ -1488,7 +1516,7 @@ struct descriptor_table {
 
 
 
-int JSZL_API_DEFINE(jszlIterate,
+int API_DEFINE(jszlIterate,
  jszlhandle_t handle, int (*callback)(void *, int), void *passback, const char *path
 ){
 	struct jszlcontext *pctx;
@@ -1514,7 +1542,14 @@ int JSZL_API_DEFINE(jszlIterate,
 // 3. copy data and set null term
 // 4. increment to next instance
 
-int JSZL_API_DEFINE(jszl_deserialize_object,
+/*********************************************//**
+ * jszl_deserialize_object
+ *
+ * @return 
+ *
+ **********************************************/
+
+int API_DEFINE(jszl_deserialize_object,
  jszlhandle_t handle,
  void *buffer,
  struct field_desc table[],
@@ -1615,7 +1650,7 @@ NEXT_DESCRIPTOR:
 ** check if key/value pair exists in document
 */
 
-int JSZL_API_DEFINE(jszl_key_exists, jszlhandle_t handle, const char *path)
+int API_DEFINE(jszl_key_exists, jszlhandle_t handle, const char *path)
 {
 	get_context(handle);
 	return JszlE_None;
@@ -1628,7 +1663,7 @@ int JSZL_API_DEFINE(jszl_key_exists, jszlhandle_t handle, const char *path)
 * @param errmsg	the string message
 *
 */
-int JSZL_API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg)
+int API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg)
 {
 	get_context(handle);
 	return JszlE_None;
@@ -1636,7 +1671,7 @@ int JSZL_API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg)
 
 
 
-int JSZL_API_DEFINE(jszl_count,
+int API_DEFINE(jszl_count,
  jszlhandle_t handle, const char *path)
 {
 	int err;
@@ -1657,4 +1692,7 @@ int JSZL_API_DEFINE(jszl_count,
 	if( GET_VALUE_TYPE((*pnode)) != TYPE_ARRAY) return JszlE_TypeMismatch; 
 	return pnode->count;
 }
+
+#undef API_DEFINE
+#undef API_CALL
 

@@ -23,10 +23,10 @@
 
 #if defined(DEBUG) || defined(_DEBUG)
 
-  #define JSZL_API_DEFINE(name, ...)\
+  #define API_DEFINE(name, ...)\
   _##name(const char *_file, unsigned int _line, const char *_func, __VA_ARGS__)
 
-  #define JSZL_API_CALL(name, ...)\
+  #define API_CALL(name, ...)\
   _##name(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
 
 
@@ -34,8 +34,8 @@
   printf("Error in file '%s' on line '%u' in function '%s'\n", _file, _line, _func)
 
 #else
-  #define JSZL_API_DEFINE(name, ...) _##name(__VA_ARGS__)
-  #define JSZL_API_CALL(name, ...) _##name(__VA_ARGS__)
+  #define API_DEFINE(name, ...) _##name(__VA_ARGS__)
+  #define API_CALL(name, ...) _##name(__VA_ARGS__)
   #define DEBUG_OUT()
 #endif
 
@@ -376,16 +376,16 @@ An atom is a pointer to a unique, immutable sequence of zero or more arbitrary b
 The atom table should exists in memory as long as the atom pool.
 */
 
-#define jszl_init(vtblref, options) JSZL_API_CALL(jszl_init, vtblref, options)
-void JSZL_API_DEFINE(jszl_init,
+#define jszl_init(vtblref, options) API_CALL(jszl_init, vtblref, options)
+void API_DEFINE(jszl_init,
   struct jszlvtable *vtblref, unsigned long options
 );
 
 
 
 #define jszl_property(handle, property, ...)\
-  JSZL_API_CALL(jszl_property, handle, property, __VA_ARGS__) 
-int JSZL_API_DEFINE(jszl_property,
+  API_CALL(jszl_property, handle, property, __VA_ARGS__) 
+int API_DEFINE(jszl_property,
   jszlhandle_t handle, enum JszlProperty property, ...
 );
 
@@ -403,26 +403,31 @@ int JSZL_API_DEFINE(jszl_property,
 */
 
 #define jszl_count(handle, path)\
-JSZL_API_CALL(jszl_count, handle, path)
-JSZLEXPORT int JSZL_API_DEFINE(jszl_count,
+API_CALL(jszl_count, handle, path)
+JSZLEXPORT int API_DEFINE(jszl_count,
   jszlhandle_t handle, const char *path
 );
 
 
-#define jszl_thread_init() JSZL_API_CALL(jszl_thread_init)
-JSZLEXPORT jszlhandle_t JSZL_API_DEFINE(jszl_thread_init);
+/*****************************************//**
+ * jszl_thread_init
+ *
+ * ***************************************/
+
+#define jszl_thread_init() API_CALL(jszl_thread_init)
+JSZLEXPORT jszlhandle_t API_DEFINE(jszl_thread_init);
 
 
 #define jszl_parse_local_file(Handle, File)\
-  JSZL_API_CALL(jszl_parse_local_file, Handle, File)
-JSZLEXPORT int JSZL_API_DEFINE(jszl_parse_local_file,
+  API_CALL(jszl_parse_local_file, Handle, File)
+JSZLEXPORT int API_DEFINE(jszl_parse_local_file,
   jszlhandle_t handle ,const char *file
 );
 
 
 #define jszlIterate(Handle, Callback, Passback, Path)\
-JSZL_API_CALL(jszlIterate, Callback, Passback, Path)
-JSZLEXPORT int JSZL_API_DEFINE(jszlIterate,
+API_CALL(jszlIterate, Callback, Passback, Path)
+JSZLEXPORT int API_DEFINE(jszlIterate,
   jszlhandle_t handle,
   int (*callback)(void *, int),
   void *passback,
@@ -432,14 +437,14 @@ JSZLEXPORT int JSZL_API_DEFINE(jszlIterate,
 /*
 ** Parse and cache a JSON document
 */
-#define jszl_load(HANDLE, JSONSTR) JSZL_API_CALL(jszl_load, HANDLE, JSONSTR)
-int JSZL_API_DEFINE(jszl_load, jszlhandle_t hdl, const char *jsonstr);
+#define jszl_load(HANDLE, JSONSTR) API_CALL(jszl_load, HANDLE, JSONSTR)
+int API_DEFINE(jszl_load, jszlhandle_t hdl, const char *jsonstr);
 
 
 
 #define json_read(PSTATE, POBJECT, JSON_STR)\
-JSZL_API_CALL(json_read, PSTATE, POBJECT, JSON_STR)
-int JSZL_API_DEFINE(json_read,
+API_CALL(json_read, PSTATE, POBJECT, JSON_STR)
+int API_DEFINE(json_read,
   struct jszlparser *pstate,
   struct jszlcontext *handle,
   const char *str
@@ -452,8 +457,8 @@ int JSZL_API_DEFINE(json_read,
 */
 
 #define jszl_set_document_scope(handle, path)\
-  JSZL_API_CALL(jszl_set_document_scope, handle, path)
-JSZLEXPORT int JSZL_API_DEFINE(jszl_set_document_scope,
+  API_CALL(jszl_set_document_scope, handle, path)
+JSZLEXPORT int API_DEFINE(jszl_set_document_scope,
   jszlhandle_t handle, const char *pathstr);
 
 
@@ -463,8 +468,8 @@ JSZLEXPORT int JSZL_API_DEFINE(jszl_set_document_scope,
 ** '#' should always equal the current root
 */
 #define jszl_is_root(Handle, Path)\
-  JSZL_API_CALL(jszl_is_root, Handle, Path)
-JSZLEXPORT int JSZL_API_DEFINE(jszl_is_root,
+  API_CALL(jszl_is_root, Handle, Path)
+JSZLEXPORT int API_DEFINE(jszl_is_root,
   jszlhandle_t handle, const char *pathstr);
 
 
@@ -472,8 +477,8 @@ JSZLEXPORT int JSZL_API_DEFINE(jszl_is_root,
 ** Query a JSON document to check is a value exist
 */
 #define jszl_value_exists(Handle, Path)\
-JSZL_API_CALL(jszl_values_exists, Handle, Path)
-JSZLEXPORT int JSZL_API_DEFINE(jszl_key_exists,
+API_CALL(jszl_values_exists, Handle, Path)
+JSZLEXPORT int API_DEFINE(jszl_key_exists,
   jszlhandle_t handle,
   const char *path
 );
@@ -483,8 +488,8 @@ JSZLEXPORT int JSZL_API_DEFINE(jszl_key_exists,
 ** Deserialize a string value
 */
 #define jszl_deserialize_string(HANDLE, ENDPOINT, STRBUF, BUFSIZE, PSIZE)\
-JSZL_API_CALL(jszl_deserialize_string, HANDLE, ENDPOINT, STRBUF, BUFSIZE, PSIZE)
-JSZLEXPORT int JSZL_API_DEFINE(jszl_deserialize_string,
+API_CALL(jszl_deserialize_string, HANDLE, ENDPOINT, STRBUF, BUFSIZE, PSIZE)
+JSZLEXPORT int API_DEFINE(jszl_deserialize_string,
   jszlhandle_t handle,
   const char *endpoint,
   char strbuf[],
@@ -495,8 +500,8 @@ JSZLEXPORT int JSZL_API_DEFINE(jszl_deserialize_string,
 
 
 #define json_query_get_string(POBJ, PATH, STRBUF, BUFSIZE, PSIZE)\
-JSZL_API_CALL(json_query_get_string, POBJ, PATH, STRBUF, BUFSIZE, PSIZE)
-int JSZL_API_DEFINE(json_query_get_string,
+API_CALL(json_query_get_string, POBJ, PATH, STRBUF, BUFSIZE, PSIZE)
+int API_DEFINE(json_query_get_string,
   struct jszlcontext *handle,
   const char * path,
   char strbuf[],
@@ -510,8 +515,8 @@ int JSZL_API_DEFINE(json_query_get_string,
 ** Deserialize a number value 
 */
 #define jszl_deserialize_number(HANDLE, ENDPOINT, PNUM)\
-JSZL_API_CALL(jszl_deserialize_number, HANDLE, ENDPOINT, PNUM)
-int JSZL_API_DEFINE(jszl_deserialize_number,
+API_CALL(jszl_deserialize_number, HANDLE, ENDPOINT, PNUM)
+int API_DEFINE(jszl_deserialize_number,
   jszlhandle_t handle,
   const char *endpoint,
   long *pnum
@@ -519,8 +524,8 @@ int JSZL_API_DEFINE(jszl_deserialize_number,
 
 
 #define jszl_deserialize_object(Handle, Buffer, Table, Count, Path)\
-JSZL_API_CALL(jszl_deserialize_object, Handle, Buffer, Table, Count, Path)
-int JSZL_API_DEFINE(jszl_deserialize_object,
+API_CALL(jszl_deserialize_object, Handle, Buffer, Table, Count, Path)
+int API_DEFINE(jszl_deserialize_object,
   jszlhandle_t handle,
   void *buffer,
   struct field_desc table[],
@@ -533,8 +538,8 @@ int JSZL_API_DEFINE(jszl_deserialize_object,
 ** Returns: JSON_SUCCESS JSON_ERROR_TYPE_MISMATCH
 */
 #define jszl_deserialize_boolean(HANDLE, ENDPOINT, PBOOL)\
-JSZL_API_CALL(jszl_deserialize_boolean, HANDLE, ENDPOINT, PBOOL)
-int JSZL_API_DEFINE(jszl_deserialize_boolean,
+API_CALL(jszl_deserialize_boolean, HANDLE, ENDPOINT, PBOOL)
+int API_DEFINE(jszl_deserialize_boolean,
   jszlhandle_t handle,
   const char *endpoint,
   long *boolean
@@ -575,8 +580,8 @@ jszle _jszl_query_type(JSZLDBG_DEF_WITH_PARAMS
 ** get the string error message from a given error code
 **
 */
-#define jszl_op_error(handle, errmsg) JSZL_API_CALL(jszl_op_error, handle, errmsg)
-int JSZL_API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg);
+#define jszl_op_error(handle, errmsg) API_CALL(jszl_op_error, handle, errmsg)
+int API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg);
 
 
 /*
@@ -597,5 +602,7 @@ int _json_foreach(
 
 //#undef JSZLDBG_DEF_WITH_PARAMS
 
+#undef API_DEFINE
+#undef API_CALL
 
 #endif
