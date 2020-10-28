@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <ctype.h>
 
+#include "npx.h"
 #include "jsizzle.h"
 
 
@@ -1209,13 +1210,13 @@ void utf8()
 ** checks membind to see if the global environment has already been
 ** initialized
 */
-void API_DEFINE(jszl_init,
+NPX_PUBLIC_API_DEFINE(
+	jszl_init,
 	struct jszlvtable *vt,
 	unsigned long options)
 {
-
 	//DEBUG_OUT();
-	if(g_vtable.memalloc) return;
+	if(g_vtable.memalloc) return 0;
 
 	g_vtable.memalloc = vt->memalloc ? vt->memalloc : memalloc;
 
@@ -1225,7 +1226,8 @@ void API_DEFINE(jszl_init,
 }
 
 
-int API_DEFINE(jszl_property,
+NPX_PUBLIC_API_DEFINE(
+	jszl_property,
 	jszlhandle_t handle,
 	enum JszlProp prop, ...)
 {
@@ -1265,7 +1267,7 @@ int API_DEFINE(jszl_property,
 /*
 ** jszl_thread_init
 */
-jszlhandle_t API_DEFINE(jszl_thread_init)
+NPX_PUBLIC_API_DEFINE(jszl_thread_init, jszlhandle_t *handle)
 {
 	if(!g_vtable.memalloc) return 0; //failure to init global
 
@@ -1287,7 +1289,11 @@ jszlhandle_t API_DEFINE(jszl_thread_init)
 
 
 //jszlParseString
-int API_DEFINE(jszlParseString, jszlhandle_t handle, const char *json){
+NPX_PUBLIC_API_DEFINE(
+	jszlParseString,
+	jszlhandle_t handle,
+	const char *json)
+{
 	return JszlE_None;
 }
 
@@ -1326,7 +1332,11 @@ void * new_parser()
  *
  ********************************************************/
 
-int API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path){
+NPX_PUBLIC_API_DEFINE(
+	jszl_parse_local_file,
+	jszlhandle_t handle,
+	const char *path)
+{
 	struct jszlfile fs = {0};
 	//struct jszlfile *pfs = &fs;
 	const char *json;
@@ -1371,13 +1381,16 @@ int API_DEFINE(jszl_parse_local_file, jszlhandle_t handle, const char *path){
 
 //jszl_load
 
-int API_DEFINE(jszl_load, jszlhandle_t handle, const char *filename)
+NPX_PUBLIC_API_DEFINE(
+	jszl_load,
+	jszlhandle_t handle,
+	const char *filename)
 {
 
-struct jszlfile file;
-int err;
-struct jszlcontext *pctx;
-struct jszlparser parser;
+	struct jszlfile file;
+	int err;
+	struct jszlcontext *pctx;
+	struct jszlparser parser;
 
 	pctx = get_context(handle);
 	//pctx->error_file = __file__;
@@ -1395,9 +1408,12 @@ struct jszlparser parser;
 }
 
 
-int API_DEFINE(json_read,
- struct jszlparser *pstate, struct jszlcontext *handle, const char *str
-){
+NPX_PUBLIC_API_DEFINE(
+	json_read,
+	struct jszlparser *pstate,
+	struct jszlcontext *handle,
+	const char *str)
+{
 	int rslt;
 	rslt = parse_engine(pstate, handle, str, string_handler);
 	if(rslt != JszlE_None) return rslt;
@@ -1409,9 +1425,12 @@ int API_DEFINE(json_read,
 * @param handle handle to a JSizzle context
 * @param path JSON path to a valid object or array
 */
-jszlopresult API_DEFINE(jszl_set_document_scope,
- jszlhandle_t handle, const char *path
-){
+NPX_PUBLIC_API_DEFINE(
+	jszl_set_document_scope,
+	jszlhandle_t handle,
+	const char *path,
+	jszlopresult *res)
+{
 	struct jszlcontext *pctx;
 	struct jszlnode *pnode;
 
@@ -1452,9 +1471,11 @@ jszlopresult API_DEFINE(jszl_set_document_scope,
  *
  ********************************************************/
 
-int API_DEFINE(jszl_is_root,
- jszlhandle_t handle, const char *path
-){
+NPX_PUBLIC_API_DEFINE(
+	jszl_is_root,
+	jszlhandle_t handle,
+	const char *path)
+{
 	struct jszlcontext *pctx;
 	struct jszlnode *pnode;
 
@@ -1482,9 +1503,11 @@ int API_DEFINE(jszl_is_root,
 /*
 ** Set the user context pointer to be passed to the user defined virtual table
 */
-int API_DEFINE(jszlSetUserContext,
- jszlhandle_t handle, void *userctx
-){
+NPX_PUBLIC_API_DEFINE(
+	jszlSetUserContext,
+	jszlhandle_t handle,
+	void *userctx)
+{
 	struct jszlcontext *ctx;
 
 	ctx = get_context(handle);
@@ -1494,9 +1517,11 @@ int API_DEFINE(jszlSetUserContext,
 }
 
 
-int API_DEFINE(jszl_geterror,
- jszlhandle_t handle, const char **errmsg
-){
+NPX_PUBLIC_API_DEFINE(
+	jszl_geterror,
+	jszlhandle_t handle,
+	const char **errmsg)
+{
 	struct jszlcontext *ctx;
 	ctx = get_context(handle);
 
@@ -1516,9 +1541,13 @@ struct descriptor_table {
 
 
 
-int API_DEFINE(jszlIterate,
- jszlhandle_t handle, int (*callback)(void *, int), void *passback, const char *path
-){
+NPX_PUBLIC_API_DEFINE(
+	jszlIterate,
+	jszlhandle_t handle,
+	int (*callback)(void *, int),
+	void *passback,
+	const char *path)
+{
 	struct jszlcontext *pctx;
 	struct jszlnode *pnode;
 
@@ -1549,11 +1578,13 @@ int API_DEFINE(jszlIterate,
  *
  **********************************************/
 
-int API_DEFINE(jszl_deserialize_object,
- jszlhandle_t handle,
- void *buffer,
- struct field_desc table[],
- int count, const char *path)
+NPX_PUBLIC_API_DEFINE(
+	jszl_deserialize_object,
+	jszlhandle_t handle,
+	void *buffer,
+	struct field_desc table[],
+	int count,
+	const char *path)
 {
 	struct jszlcontext *pctx;
 	int msg;
@@ -1650,7 +1681,10 @@ NEXT_DESCRIPTOR:
 ** check if key/value pair exists in document
 */
 
-int API_DEFINE(jszl_key_exists, jszlhandle_t handle, const char *path)
+NPX_PUBLIC_API_DEFINE(
+	jszl_key_exists,
+	jszlhandle_t handle,
+	const char *path)
 {
 	get_context(handle);
 	return JszlE_None;
@@ -1663,7 +1697,10 @@ int API_DEFINE(jszl_key_exists, jszlhandle_t handle, const char *path)
 * @param errmsg	the string message
 *
 */
-int API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg)
+NPX_PUBLIC_API_DEFINE(
+	jszl_op_error,
+	jszlhandle_t handle,
+	char **errmsg)
 {
 	get_context(handle);
 	return JszlE_None;
@@ -1671,8 +1708,10 @@ int API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg)
 
 
 
-int API_DEFINE(jszl_count,
- jszlhandle_t handle, const char *path)
+NPX_PUBLIC_API_DEFINE(
+	jszl_count,
+	jszlhandle_t handle,
+	const char *path)
 {
 	int err;
 	struct jszlnode *pnode;

@@ -132,7 +132,6 @@ int test_read_empty_object()
 	return 1;
 }
 
-
 int test_json()
 {
 
