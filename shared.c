@@ -257,7 +257,8 @@ unsigned x = 0;
         }
         if(*str != '.') return 0; //should be decimal
             j = atouint(str-j, j);
-        if(!_BETWEEN_(0, j, 255)) return 0;
+	    //_BETWEEN_(0, j, 255)
+        if(j < 0 || j > 255) return 0;
             x |= j << (i<<3);
         str++;
     }
@@ -269,7 +270,8 @@ unsigned x = 0;
         str++;
     }
     j = atouint(str-j, j);
-    if(!_BETWEEN_(0, j, 255)) return 0;
+    //!_BETWEEN_(0, j, 255)
+    if(j < 0 || j > 255) return 0;
     x |= j << (i<<3);
     *addr = x;
 
@@ -317,20 +319,25 @@ char flags = 0;
         if(str[1] == 'x' || str[1] == 'X'){ //hex
             str+=2;
             //if(!isdigit(*str) || _BETWEEN_('a', *str, 'f') || _BETWEEN_('A', *str, 'F') ) return 0;
+	    //_BETWEEN_('a', *str, 'f')
+	    //_BETWEEN_('A', *str, 'F')
             while(isdigit(*str) ||
-            _BETWEEN_('a', *str, 'f') ||
-            _BETWEEN_('A', *str, 'F'))
+             (*str >= 'a' && *str <= 'f') || 
+	     (*str >= 'A' && *str <= 'F'))
                 str++;
             *numtype = _NumberTypeHex;
         }
-        else if(BETWEEN_('0', str[1], '7')){ //octal
+	//BETWEEN_('0', str[1], '7')
+        else if(str[1] > '0' && str[1] <= '7'){ //octal
             str+=2;
-            while(_BETWEEN_('0', *str, '7')) str++;
+	    //_BETWEEN_('0', *str, '7')
+            while(*str >= '0' && *str <= '7') str++;
 	    *numtype = _NumberTypeOctal;
         }
         else return 1;
     }
-    else if(BETWEEN_('0', *str, '9')){ //decimal
+    //BETWEEN_('0', *str, '9')
+    else if(*str > '0' && *str <= '9'){ //decimal
         while(isdigit(*str)) str++;
         if(*str == '.'){ //floating point
             *numtype = _NumberTypeDouble;

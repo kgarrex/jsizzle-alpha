@@ -126,7 +126,7 @@ int test_read_empty_object()
 	jszlhandle_t handle;
 	const char * json = "{}";
 
-	handle = jszl_thread_init();
+	json_thread_init(&handle);
 
 	//msg = json_read(&state, &handle, json); 
 	return 1;
@@ -144,19 +144,16 @@ int test_json()
 	//PJSON_OBJECT obj = &jobj;
 
 
-	INIT_TIMER(1);
+	//INIT_TIMER(1);
 
 	int e;
 	jszlhandle_t handle;
 
-
 	struct jszlvtable vt = {0};
 
-	jszl_init(&vt, JSZLINIT_MULTITHREADED);
+	json_init(&vt, JSZLINIT_MULTITHREADED);
 
-	handle = jszl_thread_init();
-
-
+	json_thread_init(&handle);
 
 	const char *str1 = ".\\test\\test2.json";
 	const char *str2 = ".\\test\\test.json";
@@ -164,9 +161,12 @@ int test_json()
 	fmap1 = loadFileInMemory(str1, &fo);
 
 
+	/*
 	TIME_US("\nLoad schema and apply to json\n",
 			//msg = json_read(&state, &handle, fmap1); 
 	);
+	*/
+
 	char buf[16];
 	char jsonPath[64];
 	int count;
@@ -256,11 +256,11 @@ int main(int argc, char **argv)
 	jszlhandle_t handle;
 
 
-	jszl_init(&vt, JSZLINIT_MULTITHREADED);
+	//jszl_init(&vt, JSZLINIT_MULTITHREADED);
 	//__jszlGlobalInit("Hello", 3, "MyFunc", &vt, JSZLINIT_MULTITHREADED);
-	handle = jszl_thread_init();
+	npxjson_thread_init(&handle);
 
-	jszl_parse_local_file(handle, TEST_FILE);
+	npxjson_parse_file(handle, TEST_FILE);
 
 	jszl_property(handle, JszlProp_Encoding, JszlEncode_Utf8);
 	jszl_property(handle, JszlProp_ReadBuf, buf, 256); 

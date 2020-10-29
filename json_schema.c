@@ -24,6 +24,36 @@
  * 'uniqueItems': all items in array must be unique
  */
 
+/*json schema formats
+ * https://json-schema.org/understanding-json-schema/reference/string.html
+ * date-time
+ * time
+ * date
+ * email
+ * idn-email
+ * hostname
+ * idn-hostname
+ * ipv4
+ * ipv6
+ * uri
+ * uri-reference
+ * iri
+ * iri-reference
+ * uri-template
+ * json-pointer
+ * relative-json-pointer
+ * regex
+ */
+
+/* "$id" : "https://example.com/person.schema.json"
+ * "$schema" : "http://json-schema.org/draft-07/schema#"
+ * "title" : "MyInstanceDataModel"
+ * "type" : "object"
+ * "properties": {}
+*/
+
+
+
 $id
 $schema
 $ref

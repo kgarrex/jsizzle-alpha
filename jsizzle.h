@@ -4,41 +4,11 @@
 ** 
 */
 
+
 #ifndef JSZLPUBL_H
 #define JSZLPUBL_H
 
-
-
-#if defined(_WIN32) || defined(_WIN64)
-  #define JSZLEXPORT __declspec(dllexport)
-
-#elif defined(__linux__) || defined(__GNUC__)
-  #define JSZLEXPORT __attribute__((visibility("default")))
-
-#else
-  #define JSZLEXPORT
-
-#endif
-
-
-#if defined(DEBUG) || defined(_DEBUG)
-
-  #define API_DEFINE(name, ...)\
-  _##name(const char *_file, unsigned int _line, const char *_func, __VA_ARGS__)
-
-  #define API_CALL(name, ...)\
-  _##name(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
-
-
-  #define DEBUG_OUT()\
-  printf("Error in file '%s' on line '%u' in function '%s'\n", _file, _line, _func)
-
-#else
-  #define API_DEFINE(name, ...) _##name(__VA_ARGS__)
-  #define API_CALL(name, ...) _##name(__VA_ARGS__)
-  #define DEBUG_OUT()
-#endif
-
+#include "npx.h"
 
 /*
  * Function header for each function
@@ -76,34 +46,6 @@
 //http://json-schema.org/draft-03/schema#
 //http://json-schema.org/draft-02/schema#
 //http://json-schema.org/draft-01/schema#
-
-/*json schema formats
- * https://json-schema.org/understanding-json-schema/reference/string.html
- * date-time
- * time
- * date
- * email
- * idn-email
- * hostname
- * idn-hostname
- * ipv4
- * ipv6
- * uri
- * uri-reference
- * iri
- * iri-reference
- * uri-template
- * json-pointer
- * relative-json-pointer
- * regex
- */
-
-/* "$id" : "https://example.com/person.schema.json"
- * "$schema" : "http://json-schema.org/draft-07/schema#"
- * "title" : "MyInstanceDataModel"
- * "type" : "object"
- * "properties": {}
-*/
 
 
 #define JSZLPARSE_CASE_SENSITIVE_KEYS
@@ -376,10 +318,10 @@ An atom is a pointer to a unique, immutable sequence of zero or more arbitrary b
 The atom table should exists in memory as long as the atom pool.
 */
 
-#define jszl_init(vtblref, options)\
-NPX_PUBLIC_API_CALL(jszl_init, vtblref, options)
+#define json_init(vtblref, options)\
+NPX_PUBLIC_API_CALL(json_init, vtblref, options)
 NPX_PUBLIC_API_DEFINE(
-	jszl_init,
+	json_init,
   	struct jszlvtable *vtblref,
 	unsigned long options);
 
@@ -415,19 +357,21 @@ NPX_PUBLIC_API_DEFINE(
 
 
 /*****************************************//**
- * jszl_thread_init
+ * json_thread_init
  *
  * ***************************************/
 
-#define jszl_thread_init() NPX_PUBLIC_API_CALL(jszl_thread_init)
+#define npxjson_thread_init(handleptr)\
+	NPX_PUBLIC_API_CALL(npxjson_thread_init, handleptr)
 NPX_PUBLIC_API_DEFINE(
-	jszl_thread_init);
+	npxjson_thread_init,
+	jszlhandle_t *handle);
 
 
-#define jszl_parse_local_file(Handle, File)\
-NPX_PUBLIC_API_CALL(jszl_parse_local_file, Handle, File)
+#define json_parse_local_file(Handle, File)\
+NPX_PUBLIC_API_CALL(json_parse_local_file, Handle, File)
 NPX_PUBLIC_API_DEFINE(
-	jszl_parse_local_file,
+	json_parse_local_file,
   	jszlhandle_t handle,
 	const char *file);
 
@@ -444,8 +388,11 @@ NPX_PUBLIC_API_DEFINE(
 /*
 ** Parse and cache a JSON document
 */
-#define jszl_load(HANDLE, JSONSTR) NPX_PUBLIC_API_CALL(jszl_load, HANDLE, JSONSTR)
-NPX_PUBLIC_API_DEFINE(jszl_load, jszlhandle_t hdl, const char *jsonstr);
+#define jszl_load(HANDLE, JSONSTR)\
+	NPX_PUBLIC_API_CALL(jszl_load, HANDLE, JSONSTR)
+NPX_PUBLIC_API_DEFINE(
+	jszl_load, jszlhandle_t hdl,
+	const char *jsonstr);
 
 
 
@@ -489,10 +436,10 @@ NPX_PUBLIC_API_DEFINE(
 */
 #define jszl_value_exists(Handle, Path)\
 NPX_PUBLIC_API_CALL(jszl_values_exists, Handle, Path)
-NPX_PUBLIC_API_DEFINE(jszl_key_exists,
-  jszlhandle_t handle,
-  const char *path
-);
+NPX_PUBLIC_API_DEFINE(
+	jszl_key_exists,
+	jszlhandle_t handle,
+	const char *path);
 
 
 /*
@@ -500,25 +447,25 @@ NPX_PUBLIC_API_DEFINE(jszl_key_exists,
 */
 #define jszl_deserialize_string(HANDLE, ENDPOINT, STRBUF, BUFSIZE, PSIZE)\
 NPX_PUBLIC_API_CALL(jszl_deserialize_string, HANDLE, ENDPOINT, STRBUF, BUFSIZE, PSIZE)
-NPX_PUBLIC_API_DEFINE(jszl_deserialize_string,
-  jszlhandle_t handle,
-  const char *endpoint,
-  char strbuf[],
-  int bufsize,
-  int *psize
-);
+NPX_PUBLIC_API_DEFINE(
+	jszl_deserialize_string,
+	jszlhandle_t handle,
+	const char *endpoint,
+	char strbuf[],
+	int bufsize,
+	int *psize);
 
 
 
 #define json_query_get_string(POBJ, PATH, STRBUF, BUFSIZE, PSIZE)\
 NPX_PUBLIC_API_CALL(json_query_get_string, POBJ, PATH, STRBUF, BUFSIZE, PSIZE)
-NPX_PUBLIC_API_DEFINE(json_query_get_string,
-  struct jszlcontext *handle,
-  const char * path,
-  char strbuf[],
-  int bufsize,
-  int *psize
-);
+NPX_PUBLIC_API_DEFINE(
+	json_query_get_string,
+  	struct jszlcontext *handle,
+  	const char * path,
+  	char strbuf[],
+  	int bufsize,
+  	int *psize);
 
 
 
@@ -527,22 +474,22 @@ NPX_PUBLIC_API_DEFINE(json_query_get_string,
 */
 #define jszl_deserialize_number(HANDLE, ENDPOINT, PNUM)\
 NPX_PUBLIC_API_CALL(jszl_deserialize_number, HANDLE, ENDPOINT, PNUM)
-NPX_PUBLIC_API_DEFINE(jszl_deserialize_number,
-  jszlhandle_t handle,
-  const char *endpoint,
-  long *pnum
-);
+NPX_PUBLIC_API_DEFINE(
+	jszl_deserialize_number,
+  	jszlhandle_t handle,
+  	const char *endpoint,
+  	long *pnum);
 
 
 #define jszl_deserialize_object(Handle, Buffer, Table, Count, Path)\
 NPX_PUBLI_API_CALL(jszl_deserialize_object, Handle, Buffer, Table, Count, Path)
-NPX_PUBLIC_API_DEFINE(jszl_deserialize_object,
-  jszlhandle_t handle,
-  void *buffer,
-  struct field_desc table[],
-  int count,
-  const char *path
-);
+NPX_PUBLIC_API_DEFINE(
+	jszl_deserialize_object,
+  	jszlhandle_t handle,
+  	void *buffer,
+  	struct field_desc table[],
+  	int count,
+  	const char *path);
 
 
 /*
@@ -550,7 +497,8 @@ NPX_PUBLIC_API_DEFINE(jszl_deserialize_object,
 */
 #define jszl_deserialize_boolean(HANDLE, ENDPOINT, PBOOL)\
 NPX_PUBLIC_API_CALL(jszl_deserialize_boolean, HANDLE, ENDPOINT, PBOOL)
-NPX_PUBLIC_API_DEFINE(jszl_deserialize_boolean,
+NPX_PUBLIC_API_DEFINE(
+	jszl_deserialize_boolean,
 	jszlhandle_t handle,
 	const char *endpoint,
 	long *boolean);
@@ -592,7 +540,10 @@ jszle _jszl_query_type(JSZLDBG_DEF_WITH_PARAMS
 */
 #define jszl_op_error(handle, errmsg)\
 NPX_PUBLIC_API_CALL(jszl_op_error, handle, errmsg)
-NPX_PUBLIC_API_DEFINE(jszl_op_error, jszlhandle_t handle, char **errmsg);
+NPX_PUBLIC_API_DEFINE(
+	jszl_op_error,
+	jszlhandle_t handle,
+	char **errmsg);
 
 
 /*

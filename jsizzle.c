@@ -352,7 +352,7 @@ const char *g_errmsg[MAX_JSZLERR] = {
 	"The document root is missing",
 };
 
-#include "..\core.h"
+//#include "..\core.h"
 
 
 #include "hash.c"
@@ -1211,18 +1211,19 @@ void utf8()
 ** initialized
 */
 NPX_PUBLIC_API_DEFINE(
-	jszl_init,
+	json_init,
 	struct jszlvtable *vt,
 	unsigned long options)
 {
+
 	//DEBUG_OUT();
 	if(g_vtable.memalloc) return 0;
 
 	g_vtable.memalloc = vt->memalloc ? vt->memalloc : memalloc;
 
-
 	if(vt->errorlog) g_vtable.errorlog = vt->errorlog;
 	else g_vtable.errorlog = deferrorlog;
+	return 1;
 }
 
 
@@ -1265,9 +1266,11 @@ NPX_PUBLIC_API_DEFINE(
 
 
 /*
-** jszl_thread_init
+** json_thread_init
 */
-NPX_PUBLIC_API_DEFINE(jszl_thread_init, jszlhandle_t *handle)
+NPX_PUBLIC_API_DEFINE(
+	npxjson_thread_init,
+	jszlhandle_t *handle)
 {
 	if(!g_vtable.memalloc) return 0; //failure to init global
 
@@ -1328,17 +1331,17 @@ void * new_parser()
  *
  * @brief Parse a json file from the local file system
  *
- * @return Return a jszl return code
+ * @return Return a json return code
  *
  ********************************************************/
 
 NPX_PUBLIC_API_DEFINE(
-	jszl_parse_local_file,
+	json_parse_local_file,
 	jszlhandle_t handle,
 	const char *path)
 {
 	struct jszlfile fs = {0};
-	//struct jszlfile *pfs = &fs;
+	//struct jsonfile *pfs = &fs;
 	const char *json;
 
 	struct jszlcontext *ctx;
@@ -1350,9 +1353,10 @@ NPX_PUBLIC_API_DEFINE(
 		printf("Error: No context found\n"); 
 		return 0;
 	}
-
 	ctx->parser = new_parser();
 	ctx->parser->atom_pool = ctx->atom_pool;
+	printf("HERE\n");
+
 
 	//jszlpriv_open_file();
 	openFile(&fs, path);
@@ -1428,8 +1432,7 @@ NPX_PUBLIC_API_DEFINE(
 NPX_PUBLIC_API_DEFINE(
 	jszl_set_document_scope,
 	jszlhandle_t handle,
-	const char *path,
-	jszlopresult *res)
+	const char *path)
 {
 	struct jszlcontext *pctx;
 	struct jszlnode *pnode;
